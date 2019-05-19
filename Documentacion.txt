@@ -1,0 +1,15 @@
+/*  Autores:  Helena Ridocci Gutierrez / Julio Machin Ruiz / Sandra Calvo Casares
+
+Practica: Practica  Gestión de tipos
+
+*/
+
+En esta entrega se han modificado las clases calc.cup y Simbolo.java
+
+En Simbolo.java se han añadido las lineas necesarios para poder interpretar los sibolos introduciodos en la pila:
+ 	b: boolean
+ 	p: puntero de
+ 	a: array de
+
+En calc.cup se añadieron producciones a la gramatica para reconocer los booleanos, los array, los puntero y la lista de argumentos de  las funciones
+Para ellos, se añadieron al no terminal "tipo" nuevas producciones y se crearon dos no terminales nuevos (listaargumentos y listaargumentos_p) con sus producciones para reconocer la lista de argumentos

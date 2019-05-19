@@ -1,0 +1,200 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.*;
+
+parser code {:
+
+Yylex analizadorLexico;
+
+public static void main(String[] argv){
+	if (argv.length == 0) {
+		      System.out.println("Uso : java Parser  <inputfile)>");
+		    }
+	else{
+	try {
+		java.io.FileInputStream stream = new java.io.FileInputStream(argv[0]);
+	    java.io.Reader reader = new java.io.InputStreamReader(stream);
+		Yylex analizadorLexico= new Yylex(reader);
+		Parser parserObj = new Parser();
+		parserObj.analizadorLexico= analizadorLexico;
+		parserObj.setScanner(parserObj.analizadorLexico);
+		parserObj.parse();
+		}
+		catch(Exception x) {
+		System.out.println("Error fatal.");
+		}
+	}
+}
+
+public void error_sintactico(Symbol current_token){
+  report_error("Error de sintaxis con token: "+sym.terminalNames[current_token.sym]+" en linea "+analizadorLexico.linea()+" columna "+analizadorLexico.columna(),current_token);
+  
+}
+:};
+
+
+
+/*Terminales tokens que puede devolver el lexico*/
+terminal INTEGER,REAL,CHAR,BOOLEAN;
+terminal CARACTER, AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
+terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
+terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
+terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,DOSPUNTOS,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
+terminal String ID;
+terminal Integer NUM,DIM;
+terminal Float NUMREAL;
+terminal boolean TRUE, FALSE;
+
+non terminal programa, listaDeclaraciones, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value;
+non terminal SenteicaIf, SentenciaElse, SentenciaWhile;
+non terminal ListaExprLogicas, ExprLogica, TipoExpr, Expr;
+non terminal ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor;
+non terminal   listaargumentos, listaargumentos_p , DeclaracionVar, DeclaracionTipoBasico, ListaValores, DeclaracionArr, DOSdim, AsignacionDecl, DeclaracionFuncion, FuncionTipo, ReturnSentencia, ReturnTipo, ListaSentencias , Sentencia, Asignacion, ArrElement, AsigTipo;
+non terminal  Valores, Numeros, Tipo;
+
+
+precedence left MAS, MENOS;
+precedence left MULT,DIV,MOD;
+precedence left UMENOS;
+/*Gramatica*/
+
+programa ::= listaDeclaraciones
+			{: System.out.println("Empieza el programa"); :}
+	
+			| programa error PTOYCOMA
+			{: this.parser.error_sintactico(this.parser.cur_token);:}
+			
+;
+listaDeclaraciones ::=  listaDeclaraciones DeclaracionVar  
+					|  listaDeclaraciones DeclaracionFuncion 
+					{:System.out.println("Declaracion FUNCION");:} 
+					|
+;
+DeclaracionVar ::= DeclaracionTipoBasico
+			{:System.out.println("Declaracion VAR");:} 
+				| DeclaracionArr
+			{:System.out.println("Declaracion array");:} 
+			
+				
+;
+DeclaracionTipoBasico ::= Tipo ListaValores PTOYCOMA 
+			{:System.out.println("Declaracion tipo baisco");:} 
+;
+ListaValores ::= ID AsignacionDecl 
+{:System.out.println("LISTA VALORES");:} 
+				| ListaValores COMA ID AsignacionDecl
+;
+
+
+DeclaracionArr ::= Tipo ID ABRECOR NUM CIERRACOR DOSdim PTOYCOMA
+			{:System.out.println("Declaracion array");:} 
+;
+DOSdim ::=  {:System.out.println("Vacio");:} 
+	| ABRECOR DIM CIERRACOR 
+	{:System.out.println("2 dim");:} 
+;
+AsignacionDecl ::= ASIG Valores | 
+;
+
+Valores ::= CARACTER |Bool_value 
+;
+Numeros ::= NUM 
+{:System.out.println("Numero");:} 
+|NUMREAL
+;
+Bool_value ::= TRUE | FALSE;
+Tipo ::=  INTEGER |REAL |CHAR |BOOLEAN
+;
+//Funciones
+DeclaracionFuncion ::= Tipo ID ABREPAR  CIERRAPAR ABRELLAVE ListaSentencias ReturnSentencia CIERRALLAVE |  VOID ID  ABREPAR  CIERRAPAR ABRELLAVE ListaSentencias ReturnSentencia CIERRALLAVE 
+{:System.out.println("Funcion");:} 
+;
+
+ReturnSentencia ::= RETURN ReturnTipo PTOYCOMA
+{:System.out.println("return");:} 
+
+ | {:System.out.println("Vacio");:} 
+;
+ReturnTipo ::= ID 
+  {:System.out.println("id ret");:} 
+| Valores
+ {:System.out.println("valores res");:} 
+
+;
+ListaSentencias ::= ListaSentencias Sentencia 
+|
+
+;
+Sentencia ::= DeclaracionVar | Asignacion PTOYCOMA | LlamadaFunc PTOYCOMA | SenteicaIf | SentenciaWhile 
+			{:System.out.println("Sentencia");:} 
+			
+;
+Asignacion ::= Tipo ID ASIG AsigTipo | ID ASIG AsigTipo | ArrElement ASIG AsigTipo
+;
+ArrElement ::= ID ABRECOR NUM CIERRACOR DOSdim
+;
+AsigTipo ::=  AsignacionDecl | ExpresionNum  | LlamadaFunc
+;
+
+
+Elemento ::= Numeros | ID
+;
+ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
+| ExpresionNum:e1 MENOS ExpresionNum:e2
+| ExpresionNum:e1 MULT ExpresionNum:e2 
+| ExpresionNum:e1 DIV ExpresionNum:e2
+| ExpresionNum:e1 MOD ExpresionNum:e2 
+| Elemento
+| MENOS ExpresionNum:e 
+| ABREPAR ExpresionNum:e CIERRAPAR 
+;
+
+
+
+LlamadaFunc ::= ID ABREPAR ListaParam CIERRAPAR
+;
+ListaParam ::=  Elem  ListaParam_p | 
+;
+ListaParam_p ::= | COMA ID ListaParam_p | COMA Valores ListaParam_p
+;
+
+
+
+
+ListaExprLogicas ::= ExprLogica AND ListaExprLogicas
+ | ExprLogica OR ExprLogica | ExprLogica
+;
+ExprLogica ::= Expr TipoExpr | ABREPAR Expr TipoExpr CIERRAPAR 
+;
+TipoExpr ::= EQUAL Expr | NOT_EQUAL Expr |BIGGER Expr | BIGGER_EQUAL Expr | SMALLER Expr | SMALLER_EQUAL Expr | NOT_EQUAL Valores |EQUAL Valores
+;
+Expr ::= ArrElement | Elemento  
+;
+
+SenteicaIf ::= IF ABREPAR ListaExprLogicas CIERRAPAR ABRELLAVE ListaSentencias CIERRALLAVE SentenciaElse
+;
+SentenciaElse::=  | ELSE ABRELLAVE ListaSentencias CIERRALLAVE
+;
+
+
+SentenciaWhile ::= WHILE ABREPAR ListaExprLogicas CIERRAPAR ABRELLAVE ListaSentencias CIERRALLAVE;
+
+
+
+
+listaargumentos::=			/* Epsilon*/
+			| ID:id DOSPUNTOS Tipo:l listaargumentos_p:a
+			{: RESULT=l;
+			/* Se busca en tabla de simbolos y se inserta o devuelve error*/
+			:}
+			
+;
+listaargumentos_p::=			/* Epsilon*/
+	{: 
+			:}
+			
+			| COMA ID:id DOSPUNTOS Tipo:a listaargumentos_p:l
+			{: RESULT=a;
+			/* Se busca en tabla de simbolos y se inserta o devuelve error*/
+			:}
+;

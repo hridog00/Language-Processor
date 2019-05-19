@@ -1,0 +1,13 @@
+bool a = true;
+char a = 'a';
+int a;
+void main(){
+
+ a = b +3*c;
+
+
+
+
+return a;
+
+}
