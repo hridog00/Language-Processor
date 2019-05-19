@@ -3,3 +3,6 @@
 /Simbolo.class
 /Yylex.class
 /sym.class
+/Sentencia.class
+/TablaSimbolos.class
+/Parser$CUP$Parser$actions$BloqueCondicion.class

@@ -1,13 +1,6 @@
-bool a = true;
-char a = 'a';
 int a;
-void main(){
-
- a = b +3*c;
-
-
-
-
-return a;
-
+real b;
+int funcion(){
+int c = 2;
+a = b;
 }

@@ -2,17 +2,28 @@ import java_cup.runtime.*;
 import java.io.*;
 %%
 %{
+ private TablaSimbolos tabla;
+ public Yylex(Reader in, TablaSimbolos t){
+ this(in);
+ this.tabla = t;
+ }
+ public TablaSimbolos getTabla(){
+ 	return tabla;
+ }
  public int linea(){return yyline+1;}
  public int columna(){ return yycolumn+1;}
+ private static int etiquetaActual=0;
+ private String nuevaEtiqueta(){
+ 	return "etiqJF_"+(++etiquetaActual);
+ }
+ 
 %}
 %unicode
 %cup
 %line
 %column
 %%
-"scanf"  { return new Symbol(sym.SCANF);}
-"printf"  { return new Symbol(sym.PRINTF);}
-"(.|[%][d])*\" { return new Symbol(sym.TEXTO);}
+
 "while" { return new Symbol(sym.WHILE);}
 "if" { return new Symbol(sym.IF);}
 "else" {return new Symbol(sym.ELSE);}
@@ -50,5 +61,11 @@ import java.io.*;
 "," { return new Symbol(sym.COMA); }
 [:digit:]+ { return new Symbol(sym.NUM, new Integer(yytext())); }
 [:digit:]+\.[:digit:]+ { return new Symbol(sym.NUMREAL, new Float(yytext())); }
-[:jletter:][:jletterdigit:]* { return new Symbol(sym.ID, yytext()); }
+[:jletter:][:jletterdigit:]* {
+	Simbolo s;
+	s=new Simbolo(yytext(),null);
+		return new Symbol(sym.ID,s);
+	}
 [ \t\r\n]+ {;}
+. { System.out.println("Error en léxico."+yytext()+"-"); }
+

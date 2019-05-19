@@ -12,27 +12,59 @@ public static void main(String[] argv){
 		    }
 	else{
 	try {
+		TablaSimbolos tabla = new TablaSimbolos();
 		java.io.FileInputStream stream = new java.io.FileInputStream(argv[0]);
 	    java.io.Reader reader = new java.io.InputStreamReader(stream);
-		Yylex analizadorLexico= new Yylex(reader);
+		Yylex analizadorLexico= new Yylex(reader,tabla);
 		Parser parserObj = new Parser();
-		parserObj.analizadorLexico= analizadorLexico;
+		parserObj.analizadorLexico=analizadorLexico;
 		parserObj.setScanner(parserObj.analizadorLexico);
 		parserObj.parse();
 		}
 		catch(Exception x) {
-		System.out.println("Error fatal.");
+		System.out.println("Error fatal."+x.toString());
 		}
 	}
 }
 
 public void error_sintactico(Symbol current_token){
-  report_error("Error de sintaxis con token: "+sym.terminalNames[current_token.sym]+" en linea "+analizadorLexico.linea()+" columna "+analizadorLexico.columna(),current_token);
+  report_error("Error de sintaxis: linea "+analizadorLexico.linea()+" columna "+analizadorLexico.columna(),current_token);
   
 }
+
+
+
 :};
 
+action code {:
+      private  int vtemporal=0;
+      public  String nuevaTemporal()
+      {
+      	return "tmp"+(++vtemporal);
+      }
+      private  int etiqActual=0;
+      public  String nuevaEtiqueta()
+      {
+      	return "etiqCP_"+(++etiqActual);
+      }
+      class BloqueCondicion {
+	 String etqCierto, etqFalso,codigo;
+	 }
+	 private BloqueCondicion generarCondicion(String condicion)
+	 {
+	 BloqueCondicion bCond=new BloqueCondicion();
+	 bCond.etqCierto=nuevaEtiqueta();
+	 bCond.etqFalso=nuevaEtiqueta();
+	 bCond.codigo="if_false,"+condicion+","+bCond.etqFalso+";\ngoto,"+bCond.etqCierto+";\n";
+	 return bCond;
+	 }
+	 
+      
+:}
 
+//init with {: s.init(); :};
+/*Siguiente token al lexico*/
+//scan with {: return this.getScanner().next_token(); :};
 
 /*Terminales tokens que puede devolver el lexico*/
 terminal INTEGER,REAL,CHAR,BOOLEAN;
@@ -40,16 +72,18 @@ terminal CARACTER, AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
 terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
 terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
 terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,DOSPUNTOS,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
-terminal String ID;
+
+terminal Simbolo ID;
 terminal Integer NUM,DIM;
 terminal Float NUMREAL;
 terminal boolean TRUE, FALSE;
 
-non terminal programa, listaDeclaraciones, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value;
+non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, ListaValores, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
+non terminal programa,  LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value;
 non terminal SenteicaIf, SentenciaElse, SentenciaWhile;
 non terminal ListaExprLogicas, ExprLogica, TipoExpr, Expr;
 non terminal ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor;
-non terminal   listaargumentos, listaargumentos_p , DeclaracionVar, DeclaracionTipoBasico, ListaValores, DeclaracionArr, DOSdim, AsignacionDecl, DeclaracionFuncion, FuncionTipo, ReturnSentencia, ReturnTipo, ListaSentencias , Sentencia, Asignacion, ArrElement, AsigTipo;
+non terminal   listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,   FuncionTipo, ReturnSentencia, ReturnTipo, ArrElement;
 non terminal  Valores, Numeros, Tipo;
 
 
@@ -58,82 +92,194 @@ precedence left MULT,DIV,MOD;
 precedence left UMENOS;
 /*Gramatica*/
 
-programa ::= listaDeclaraciones
-			{: System.out.println("Empieza el programa"); :}
+programa ::= listaDeclaraciones:l
+			 {: System.out.println("Código generado:\n" + l.codigo); :}
 	
 			| programa error PTOYCOMA
 			{: this.parser.error_sintactico(this.parser.cur_token);:}
 			
 ;
-listaDeclaraciones ::=  listaDeclaraciones DeclaracionVar  
-					|  listaDeclaraciones DeclaracionFuncion 
-					{:System.out.println("Declaracion FUNCION");:} 
-					|
+listaDeclaraciones ::=  listaDeclaraciones:l DeclaracionVar:d
+					{: 
+
+					RESULT=new Sentencia(l.codigo+""+d.codigo,"");
+					 :}  
+					|  listaDeclaraciones:l DeclaracionFuncion:df
+					{: 
+					System.out.println("DECLARACION FUNCION:"+df.codigo);
+					RESULT=new Sentencia(l.codigo+""+df.codigo,"");
+					 :} 
+					
+					| {: RESULT=new Sentencia("",""); :}
 ;
-DeclaracionVar ::= DeclaracionTipoBasico
-			{:System.out.println("Declaracion VAR");:} 
+DeclaracionVar ::= DeclaracionTipoBasico:d1
+				{: 
+					
+					
+					RESULT=new Sentencia(d1.codigo,d1.resultado);
+					 :}
 				| DeclaracionArr
-			{:System.out.println("Declaracion array");:} 
 			
 				
 ;
-DeclaracionTipoBasico ::= Tipo ListaValores PTOYCOMA 
-			{:System.out.println("Declaracion tipo baisco");:} 
+DeclaracionTipoBasico ::= Tipo ListaValores:l1 PTOYCOMA 
+{: 
+					RESULT=new Sentencia(l1.codigo, l1.resultado);
+					 :}
 ;
-ListaValores ::= ID AsignacionDecl 
-{:System.out.println("LISTA VALORES");:} 
-				| ListaValores COMA ID AsignacionDecl
+ListaValores ::= ID:s AsignacionDecl:a
+{: Sentencia resultSent=new Sentencia(s.nombre+"="+a.resultado+"\n",s.nombre);
+								RESULT=resultSent;
+								s.valor=a.resultado;
+								
+								Simbolo sAux;
+								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									sAux=tabla.insertar(s);
+									}else{
+									sAux.valor=a.resultado;
+									
+									}
+										
+									
+									:}
+				| ListaValores:lv1 COMA ID:s AsignacionDecl:a
+				{: Sentencia resultSent=new Sentencia(lv1.codigo+s.nombre+"="+a.resultado+"\n",s.nombre);
+								RESULT=resultSent;
+								s.valor=a.resultado;
+								
+								Simbolo sAux;
+								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									sAux=tabla.insertar(s);
+									System.out.println("Insertando "+sAux.nombre);
+									}else{
+									sAux.valor=a.resultado;
+									
+									}
+										
+									
+									:}
 ;
 
 
 DeclaracionArr ::= Tipo ID ABRECOR NUM CIERRACOR DOSdim PTOYCOMA
-			{:System.out.println("Declaracion array");:} 
 ;
-DOSdim ::=  {:System.out.println("Vacio");:} 
+DOSdim ::=  
 	| ABRECOR DIM CIERRACOR 
-	{:System.out.println("2 dim");:} 
 ;
-AsignacionDecl ::= ASIG Valores | 
+AsignacionDecl ::= ASIG Valores:v
+
+
+ | {: RESULT=new Sentencia("","None"); :}
 ;
 
-Valores ::= CARACTER |Bool_value 
+Valores ::= CARACTER 
+|Bool_value 
 ;
 Numeros ::= NUM 
-{:System.out.println("Numero");:} 
 |NUMREAL
 ;
 Bool_value ::= TRUE | FALSE;
 Tipo ::=  INTEGER |REAL |CHAR |BOOLEAN
 ;
 //Funciones
-DeclaracionFuncion ::= Tipo ID ABREPAR  CIERRAPAR ABRELLAVE ListaSentencias ReturnSentencia CIERRALLAVE |  VOID ID  ABREPAR  CIERRAPAR ABRELLAVE ListaSentencias ReturnSentencia CIERRALLAVE 
-{:System.out.println("Funcion");:} 
+DeclaracionFuncion ::= Tipo:t ID:s ABREPAR  CIERRAPAR ABRELLAVE {: 
+								Simbolo sAux;
+
+	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									sAux=tabla.insertar(s);
+									System.out.println("Insertando "+sAux.nombre);
+									}
+			this.parser.analizadorLexico.getTabla().set(); :}  
+			ListaSentencias:ls
+			 CIERRALLAVE {: 
+			 this.parser.analizadorLexico.getTabla().reset();
+			 Sentencia resultSent=new Sentencia("def "+s.nombre+"():\n"+ls.codigo,s.nombre);
+			 RESULT=resultSent;
+			 
+			 :}
+
+|  VOID ID  ABREPAR  CIERRAPAR ABRELLAVE ListaSentencias ReturnSentencia CIERRALLAVE 
 ;
 
-ReturnSentencia ::= RETURN ReturnTipo PTOYCOMA
-{:System.out.println("return");:} 
-
- | {:System.out.println("Vacio");:} 
+ReturnSentencia ::= RETURN ID PTOYCOMA | RETURN Valores PTOYCOMA 
 ;
-ReturnTipo ::= ID 
-  {:System.out.println("id ret");:} 
-| Valores
- {:System.out.println("valores res");:} 
 
-;
-ListaSentencias ::= ListaSentencias Sentencia 
+ListaSentencias ::= ListaSentencias:ls1 Sentence:s 
+{:System.out.println("Entro aqui: sentencia NO vacia");
+RESULT=new Sentencia(ls1.codigo+"\t"+s.codigo,""); 
+:}
 |
+{:
+RESULT=new Sentencia("",""); 
+System.out.println("Entro aqui: sentencia vacia");
+:}
 
 ;
-Sentencia ::= DeclaracionVar | Asignacion PTOYCOMA | LlamadaFunc PTOYCOMA | SenteicaIf | SentenciaWhile 
-			{:System.out.println("Sentencia");:} 
+Sentence ::= Asignacion:a PTOYCOMA 
+{:
+RESULT=new Sentencia(a.codigo,""); 
+System.out.println("Entro aqui: sentencia vacia");
+:}
+
+| LlamadaFunc PTOYCOMA | SenteicaIf | SentenciaWhile |ReturnSentencia | DeclaracionVar
 			
 ;
-Asignacion ::= Tipo ID ASIG AsigTipo | ID ASIG AsigTipo | ArrElement ASIG AsigTipo
+Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
+{: 
+System.out.println("entro en asignacion");
+Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
+								RESULT=resultSent;
+								s.valor=as.resultado;
+								
+								Simbolo sAux;
+								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									sAux=tabla.insertar(s);
+									}else{
+									sAux.valor=as.resultado;
+									
+									}
+										
+									
+									:}
+
+|ID:s ASIG AsigTipo:as
+{:
+								
+								Simbolo sAux;
+								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									report_fatal_error("Variable no inicializada",this.parser.cur_token);
+									
+									}else{
+									 Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
+								RESULT=resultSent;
+								s.valor=as.resultado;
+									sAux.valor=as.resultado;
+									
+									}
+										
+									
+									:}
+
+ | ArrElement ASIG AsigTipo
 ;
 ArrElement ::= ID ABRECOR NUM CIERRACOR DOSdim
 ;
-AsigTipo ::=  AsignacionDecl | ExpresionNum  | LlamadaFunc
+AsigTipo ::= ExpresionNum:exprn
+{:
+System.out.println("Entro aqui");
+RESULT = new Sentencia("expresion_numerica","valor obtenido");
+:}
+  | LlamadaFunc
 ;
 
 
