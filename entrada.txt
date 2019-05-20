@@ -1,13 +1,25 @@
-int a;
-real b;
+int a,b;
 int funcion(){
-	int c = 2;
 	int d = 3;
 	a = (b+d)-2;
+	return true;
+	
 }
 int main(){
 	int e = 2+3;
-	char a = 'b';
-	bool b = true;
-	int e=funcion(); 
+	funcion(e,b); 
+	if(a==b && e==2){
+		a=2;
+		b=2;
+		int c = 4;
+	}else{
+		a=3;
+		int f =a;
+	}
+	while(a<b){
+		a = e+1;
+		int h = 3;
+	}
+	
+	
 }

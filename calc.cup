@@ -81,10 +81,10 @@ terminal boolean TRUE, FALSE;
 
 non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, ListaValores, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
 non terminal programa;
-non terminal SenteicaIf, SentenciaElse, SentenciaWhile;
-non terminal ListaExprLogicas, ExprLogica, TipoExpr, Expr;
-non terminal Sentencia ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value;
-non terminal   listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,   FuncionTipo, ReturnSentencia, ReturnTipo, ArrElement;
+non terminal Sentencia SenteicaIf, SentenciaElse, SentenciaWhile;
+non terminal Sentencia ListaExprLogicas, ExprLogica, TipoExpr, Expr;
+non terminal Sentencia ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value,  ReturnSentencia;
+non terminal   listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,   FuncionTipo, ReturnTipo, ArrElement;
 non terminal Sentencia Valores, Numeros, Tipo;
 
 
@@ -225,14 +225,36 @@ DeclaracionFuncion ::= Tipo:t ID:s ABREPAR  CIERRAPAR ABRELLAVE {:
 			 
 			 :}
 
-|  VOID ID  ABREPAR  CIERRAPAR ABRELLAVE ListaSentencias ReturnSentencia CIERRALLAVE 
+|  VOID ID:s ABREPAR  CIERRAPAR ABRELLAVE {: 
+								Simbolo sAux;
+
+	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									sAux=tabla.insertar(s);
+									System.out.println("Insertando "+sAux.nombre);
+									}
+			this.parser.analizadorLexico.getTabla().set(); :}  
+			ListaSentencias:ls
+			 CIERRALLAVE {: 
+			 this.parser.analizadorLexico.getTabla().reset();
+			 Sentencia resultSent=new Sentencia("def "+s.nombre+"():\n"+ls.codigo,s.nombre);
+			 RESULT=resultSent;
+			 
+			 :}
 ;
 
-ReturnSentencia ::= RETURN ID PTOYCOMA | RETURN Valores PTOYCOMA 
+ReturnSentencia ::= RETURN ExpresionNum:exprnum PTOYCOMA
+{:RESULT=new Sentencia("return "+exprnum.codigo+"\n",""); :}
+
+ | RETURN Valores:v PTOYCOMA
+ 
+ {:RESULT=new Sentencia("return "+v.resultado+"\n",""); :}
+  
 ;
 
 ListaSentencias ::= ListaSentencias:ls1 Sentence:s 
-{:System.out.println("Entro aqui: sentencia NO vacia");
+{:System.out.println("Entro aqui: sentencia NO vacia:");
 RESULT=new Sentencia(ls1.codigo+"\t"+s.codigo,""); 
 :}
 |
@@ -250,7 +272,14 @@ RESULT=new Sentencia(a.codigo,"");
 | LlamadaFunc:lFunc PTOYCOMA{:
 RESULT=new Sentencia(lFunc.codigo,""); 
 :}
- | SenteicaIf | SentenciaWhile |ReturnSentencia 
+ | SenteicaIf:sif 
+ {:RESULT=new Sentencia(sif.codigo,"");  :}
+  | SentenciaWhile :sw
+  
+   {:RESULT=new Sentencia(sw.codigo,"");  :}
+  
+  |ReturnSentencia:rs 
+{:RESULT=new Sentencia(rs.codigo,"");  :}
 			
 ;
 Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
@@ -387,58 +416,111 @@ LlamadaFunc ::= ID:s ABREPAR ListaParam:l CIERRAPAR
   	if ((sAux=tabla.buscarGlobal(s.nombre))==null){
 		report_fatal_error("Variable no inicializada",this.parser.cur_token);
 	}
-	Sentencia resultSent= new Sentencia(s.nombre+"("+l.codigo+")","");
+	Sentencia resultSent= new Sentencia(s.nombre+"("+l.codigo+")\n","");
 	RESULT= resultSent; 
 :}
 ;
-ListaParam ::=  Elem:elem  ListaParam_p:lp
+ListaParam ::=  Elemento:elem  ListaParam_p:lp
 {:
-	Sentencia resultSent= new Sentencia("("+elem.codigo+lp.codigo+")","");
+	Sentencia resultSent= new Sentencia(elem.resultado+lp.codigo,"");
 	RESULT= resultSent; 
 :}
 
  | {:
-RESULT = new Sentencia("","");
+	RESULT = new Sentencia("","");
 :}
 ;
 ListaParam_p ::= 
 {:
-RESULT = new Sentencia("","");
+	RESULT = new Sentencia("","");
 :}
-| COMA ID:s ListaParam_p:lp1 
+| COMA Elemento:elem ListaParam_p:lp1 
 {:
-	Simbolo sAux;
-  	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
-  	if ((sAux=tabla.buscarGlobal(s.nombre))==null){
-		report_fatal_error("Variable no inicializada",this.parser.cur_token);
-	}
-	RESULT = new Sentencia(","+s.nombre+lp1.codigo,"");
+	
+	RESULT = new Sentencia(","+elem.resultado+lp1.codigo,"");
 :}
 | COMA Valores:v ListaParam_p:lp1
 
-{:RESULT = new Sentencia(","+v.resultado+lp1.codigo,"");:}
+{:	RESULT = new Sentencia(","+v.resultado+lp1.codigo,"");:}
 ;
 
 
 
 
-ListaExprLogicas ::= ExprLogica AND ListaExprLogicas
- | ExprLogica OR ExprLogica | ExprLogica
+ListaExprLogicas ::= ExprLogica:ex_logica1 AND ListaExprLogicas:l_exp
+ {: RESULT= new Sentencia(ex_logica1.codigo +" and "+l_exp.codigo,""); :}
+ | ExprLogica:ex_logica1 OR ListaExprLogicas:l_exp
+  {: RESULT= new Sentencia(ex_logica1.codigo +" or "+l_exp.codigo,""); :}
+ | ExprLogica:e
+ {: 
+ 	System.out.println("Analizo expresion logica");
+ 	RESULT= new Sentencia(e.codigo,""); :}
 ;
-ExprLogica ::= Expr TipoExpr | ABREPAR Expr TipoExpr CIERRAPAR 
+ExprLogica ::= Expr:exprl TipoExpr:tipo_expr 
+{:	RESULT = new Sentencia(exprl.codigo+tipo_expr.codigo ,""); :}
+
+| ABREPAR Expr:exprl TipoExpr:tipo_expr CIERRAPAR 
 ;
-TipoExpr ::= EQUAL Expr | NOT_EQUAL Expr |BIGGER Expr | BIGGER_EQUAL Expr | SMALLER Expr | SMALLER_EQUAL Expr | NOT_EQUAL Valores |EQUAL Valores
+TipoExpr ::= EQUAL Expr:exprl1
+{:	RESULT = new Sentencia("=="+exprl1.codigo,""); :}
+| NOT_EQUAL Expr:exprl1
+{:	RESULT = new Sentencia("!="+exprl1.codigo,""); :}
+ |BIGGER Expr:exprl1
+{:	RESULT = new Sentencia(">"+exprl1.codigo,""); :} 
+| BIGGER_EQUAL Expr:exprl1
+{:	RESULT = new Sentencia(">="+exprl1.codigo,""); :}
+ | SMALLER Expr:exprl1
+{:	RESULT = new Sentencia("<"+exprl1.codigo,""); :}
+  | SMALLER_EQUAL Expr:exprl1
+{:	RESULT = new Sentencia("<="+exprl1.codigo,""); :}
+  | NOT_EQUAL Valores:v
+{:	RESULT = new Sentencia("!="+v.resultado,""); :}
+  |EQUAL Valores:v
+{:	RESULT = new Sentencia("=="+v.resultado,""); :}
 ;
-Expr ::= ArrElement | Elemento  
+Expr ::= ArrElement | Elemento:elemto
+{:  	RESULT = new Sentencia(elemto.resultado,"");
+:}
+  
 ;
 
-SenteicaIf ::= IF ABREPAR ListaExprLogicas CIERRAPAR ABRELLAVE ListaSentencias CIERRALLAVE SentenciaElse
+SenteicaIf ::= IF ABREPAR ListaExprLogicas:l_exp CIERRAPAR ABRELLAVE {:this.parser.analizadorLexico.getTabla().set();:} ListaSentencias:ls {:this.parser.analizadorLexico.getTabla().reset();:}CIERRALLAVE SentenciaElse:se
+{:
+	ls.codigo = ls.codigo.replace("\n", "\n\t");
+	String codigo =  "if("+l_exp.codigo+"):\n\t"+ls.codigo+se.codigo;
+	RESULT = new Sentencia(codigo+"\n","");
+
+	
+	:}
 ;
-SentenciaElse::=  | ELSE ABRELLAVE ListaSentencias CIERRALLAVE
+SentenciaElse::=  
+{:	System.out.println("Entro en sentencia else");
+	RESULT = new Sentencia("","");:}
+
+| ELSE ABRELLAVE  {:this.parser.analizadorLexico.getTabla().set();:} ListaSentencias:ls CIERRALLAVE
+{:
+	
+	
+	this.parser.analizadorLexico.getTabla().reset();
+	ls.codigo = ls.codigo.replace("\n", "\n\t");
+		
+	String codigo =  "else:\n\t"+ls.codigo;
+	RESULT = new Sentencia(codigo+"\n","");
+
+	
+	:}
+
 ;
 
 
-SentenciaWhile ::= WHILE ABREPAR ListaExprLogicas CIERRAPAR ABRELLAVE ListaSentencias CIERRALLAVE;
+SentenciaWhile ::= WHILE ABREPAR ListaExprLogicas:l_exp CIERRAPAR {:this.parser.analizadorLexico.getTabla().set();:} ABRELLAVE ListaSentencias:ls CIERRALLAVE
+{:	this.parser.analizadorLexico.getTabla().reset();
+	ls.codigo = ls.codigo.replace("\n", "\n\t");
+	String codigo =  "while("+l_exp.codigo+"):\n\t"+ls.codigo;
+	RESULT = new Sentencia(codigo+"\n","");
+:}
+
+;
 
 
 
