@@ -47,7 +47,7 @@ import java.io.*;
 ")" { return new Symbol(sym.CIERRAPAR); }
 "{" { return new Symbol(sym.ABRELLAVE); }
 "}" { return new Symbol(sym.CIERRALLAVE); }
-\'.\' { return new Symbol(sym.CARACTER); }
+\'.\' { return new Symbol(sym.CARACTER, new String(yytext())); }
 "void" { return new Symbol(sym.VOID); }
 "return" { return new Symbol(sym.RETURN); }
 "int" { return new Symbol(sym.INTEGER); }

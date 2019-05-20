@@ -6,48 +6,48 @@
 /** CUP generated interface containing symbol constants. */
 public interface sym {
   /* terminals */
-  public static final int DOSPUNTOS = 28;
-  public static final int CIERRALLAVE = 32;
-  public static final int MULT = 16;
+  public static final int DOSPUNTOS = 27;
+  public static final int CIERRALLAVE = 31;
+  public static final int MULT = 15;
   public static final int CHAR = 4;
-  public static final int NOT_EQUAL = 12;
+  public static final int NOT_EQUAL = 11;
   public static final int INTEGER = 2;
-  public static final int SMALLER = 22;
-  public static final int AND = 7;
-  public static final int CARACTER = 6;
-  public static final int OR = 8;
-  public static final int SMALLER_EQUAL = 23;
-  public static final int DIV = 17;
+  public static final int SMALLER = 21;
+  public static final int AND = 6;
+  public static final int CARACTER = 35;
+  public static final int OR = 7;
+  public static final int SMALLER_EQUAL = 22;
+  public static final int DIV = 16;
   public static final int NUM = 37;
-  public static final int PTOYCOMA = 30;
-  public static final int IF = 9;
-  public static final int UMENOS = 19;
+  public static final int PTOYCOMA = 29;
+  public static final int IF = 8;
+  public static final int UMENOS = 18;
   public static final int ID = 36;
   public static final int DIM = 38;
   public static final int EOF = 0;
   public static final int BOOLEAN = 5;
-  public static final int RETURN = 35;
-  public static final int ASIG = 31;
-  public static final int EQUAL = 11;
+  public static final int ASIG = 30;
+  public static final int RETURN = 34;
+  public static final int EQUAL = 10;
   public static final int TRUE = 40;
   public static final int error = 1;
-  public static final int COMA = 29;
-  public static final int BIGGER_EQUAL = 21;
-  public static final int MENOS = 15;
-  public static final int CIERRACOR = 27;
-  public static final int MOD = 18;
-  public static final int BIGGER = 20;
-  public static final int VOID = 34;
+  public static final int COMA = 28;
+  public static final int BIGGER_EQUAL = 20;
+  public static final int MENOS = 14;
+  public static final int CIERRACOR = 26;
+  public static final int MOD = 17;
+  public static final int BIGGER = 19;
+  public static final int VOID = 33;
   public static final int NUMREAL = 39;
-  public static final int CIERRAPAR = 25;
+  public static final int CIERRAPAR = 24;
   public static final int REAL = 3;
-  public static final int ABRECOR = 26;
-  public static final int ELSE = 10;
-  public static final int ABRELLAVE = 33;
-  public static final int ABREPAR = 24;
-  public static final int WHILE = 13;
+  public static final int ABRECOR = 25;
+  public static final int ELSE = 9;
+  public static final int ABRELLAVE = 32;
+  public static final int ABREPAR = 23;
+  public static final int WHILE = 12;
   public static final int FALSE = 41;
-  public static final int MAS = 14;
+  public static final int MAS = 13;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -55,7 +55,6 @@ public interface sym {
   "REAL",
   "CHAR",
   "BOOLEAN",
-  "CARACTER",
   "AND",
   "OR",
   "IF",
@@ -85,6 +84,7 @@ public interface sym {
   "ABRELLAVE",
   "VOID",
   "RETURN",
+  "CARACTER",
   "ID",
   "NUM",
   "DIM",

@@ -1,6 +1,13 @@
 int a;
 real b;
 int funcion(){
-int c = 2;
-a = b;
+	int c = 2;
+	int d = 3;
+	a = (b+d)-2;
+}
+int main(){
+	int e = 2+3;
+	char a = 'b';
+	bool b = true;
+	int e=funcion(); 
 }

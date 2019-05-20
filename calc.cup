@@ -68,23 +68,24 @@ action code {:
 
 /*Terminales tokens que puede devolver el lexico*/
 terminal INTEGER,REAL,CHAR,BOOLEAN;
-terminal CARACTER, AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
+terminal  AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
 terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
 terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
 terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,DOSPUNTOS,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
 
+terminal String CARACTER;
 terminal Simbolo ID;
 terminal Integer NUM,DIM;
 terminal Float NUMREAL;
 terminal boolean TRUE, FALSE;
 
 non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, ListaValores, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
-non terminal programa,  LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value;
+non terminal programa;
 non terminal SenteicaIf, SentenciaElse, SentenciaWhile;
 non terminal ListaExprLogicas, ExprLogica, TipoExpr, Expr;
-non terminal ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor;
+non terminal Sentencia ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value;
 non terminal   listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,   FuncionTipo, ReturnSentencia, ReturnTipo, ArrElement;
-non terminal  Valores, Numeros, Tipo;
+non terminal Sentencia Valores, Numeros, Tipo;
 
 
 precedence left MAS, MENOS;
@@ -176,13 +177,33 @@ AsignacionDecl ::= ASIG Valores:v
  | {: RESULT=new Sentencia("","None"); :}
 ;
 
-Valores ::= CARACTER 
-|Bool_value 
+Valores ::= CARACTER:c 
+
+{: 
+  System.out.println("Entro en caracter");
+RESULT=new Sentencia("",c); 
+  System.out.println("Salgo en caracter");
+
+:} 
+
+|Bool_value:b 
+{: RESULT=new Sentencia("",b.resultado); :} 
+
 ;
-Numeros ::= NUM 
-|NUMREAL
+Numeros ::= NUM:n
+{: RESULT=new Sentencia("",n.toString()); :} 
+ 
+|NUMREAL:n
+{: RESULT=new Sentencia("",n.toString()); :} 
+
+
 ;
-Bool_value ::= TRUE | FALSE;
+Bool_value ::= 
+TRUE
+{: RESULT=new Sentencia("","True"); :} 
+| FALSE
+{: RESULT=new Sentencia("","False"); :} 
+;
 Tipo ::=  INTEGER |REAL |CHAR |BOOLEAN
 ;
 //Funciones
@@ -224,10 +245,12 @@ System.out.println("Entro aqui: sentencia vacia");
 Sentence ::= Asignacion:a PTOYCOMA 
 {:
 RESULT=new Sentencia(a.codigo,""); 
-System.out.println("Entro aqui: sentencia vacia");
 :}
 
-| LlamadaFunc PTOYCOMA | SenteicaIf | SentenciaWhile |ReturnSentencia | DeclaracionVar
+| LlamadaFunc:lFunc PTOYCOMA{:
+RESULT=new Sentencia(lFunc.codigo,""); 
+:}
+ | SenteicaIf | SentenciaWhile |ReturnSentencia 
 			
 ;
 Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
@@ -243,7 +266,7 @@ Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
 									{
 									sAux=tabla.insertar(s);
 									}else{
-									sAux.valor=as.resultado;
+									report_fatal_error("Variable ya declarada",this.parser.cur_token);
 									
 									}
 										
@@ -276,32 +299,124 @@ ArrElement ::= ID ABRECOR NUM CIERRACOR DOSdim
 ;
 AsigTipo ::= ExpresionNum:exprn
 {:
-System.out.println("Entro aqui");
-RESULT = new Sentencia("expresion_numerica","valor obtenido");
+RESULT = new Sentencia(exprn.codigo,exprn.codigo);
 :}
-  | LlamadaFunc
+  | LlamadaFunc:lF 
+  {:
+RESULT = new Sentencia(lF.codigo,lF.codigo);
+:}
+
+  |  Valores: v
+  {:
+  System.out.println("Entro en asig tipo valores");
+RESULT = new Sentencia(v.resultado,v.resultado);
+:}
 ;
 
 
-Elemento ::= Numeros | ID
+Elemento ::= Numeros:num
+{: RESULT=new Sentencia("",num.resultado); :} 
+
+ | ID:s
+   {:Simbolo sAux;
+  	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+  	if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+		report_fatal_error("Variable no inicializada",this.parser.cur_token);
+	}
+									
+										
+   RESULT=new Sentencia("",sAux.nombre); :}
 ;
 ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
+{: 
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia(e1.codigo+"+"+e2.codigo,temporal);
+	RESULT= resultSent; 
+:}
+
 | ExpresionNum:e1 MENOS ExpresionNum:e2
+{: 
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia(e1.codigo+"-"+e2.codigo,temporal);
+	RESULT= resultSent; 
+:}
+
 | ExpresionNum:e1 MULT ExpresionNum:e2 
+{: 
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia(e1.codigo+"*"+e2.codigo,temporal);
+	RESULT= resultSent; 
+:}
 | ExpresionNum:e1 DIV ExpresionNum:e2
+{: 
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia(e1.codigo+"/"+e2.codigo,temporal);
+	RESULT= resultSent; 
+:}
 | ExpresionNum:e1 MOD ExpresionNum:e2 
-| Elemento
+{: 
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia(e1.codigo+"%"+e2.codigo,temporal);
+	RESULT= resultSent; 
+:}
+| Elemento:el
+{: RESULT=new Sentencia(el.resultado,el.resultado); :} 
+
 | MENOS ExpresionNum:e 
+{: 
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia("-"+e.codigo,temporal);
+	RESULT= resultSent; 
+:}
+
 | ABREPAR ExpresionNum:e CIERRAPAR 
+{:
+	String temporal=nuevaTemporal();	
+	Sentencia resultSent= new Sentencia("("+e.codigo+")",temporal);
+	RESULT= resultSent; 
+:}
+
 ;
 
 
 
-LlamadaFunc ::= ID ABREPAR ListaParam CIERRAPAR
+LlamadaFunc ::= ID:s ABREPAR ListaParam:l CIERRAPAR
+{:
+	Simbolo sAux;
+	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+  	if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+		report_fatal_error("Variable no inicializada",this.parser.cur_token);
+	}
+	Sentencia resultSent= new Sentencia(s.nombre+"("+l.codigo+")","");
+	RESULT= resultSent; 
+:}
 ;
-ListaParam ::=  Elem  ListaParam_p | 
+ListaParam ::=  Elem:elem  ListaParam_p:lp
+{:
+	Sentencia resultSent= new Sentencia("("+elem.codigo+lp.codigo+")","");
+	RESULT= resultSent; 
+:}
+
+ | {:
+RESULT = new Sentencia("","");
+:}
 ;
-ListaParam_p ::= | COMA ID ListaParam_p | COMA Valores ListaParam_p
+ListaParam_p ::= 
+{:
+RESULT = new Sentencia("","");
+:}
+| COMA ID:s ListaParam_p:lp1 
+{:
+	Simbolo sAux;
+  	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+  	if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+		report_fatal_error("Variable no inicializada",this.parser.cur_token);
+	}
+	RESULT = new Sentencia(","+s.nombre+lp1.codigo,"");
+:}
+| COMA Valores:v ListaParam_p:lp1
+
+{:RESULT = new Sentencia(","+v.resultado+lp1.codigo,"");:}
 ;
 
 
