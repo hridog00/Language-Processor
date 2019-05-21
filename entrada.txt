@@ -1,4 +1,6 @@
 int a,b;
+char letra, letra2 = 'a';
+bool verdad = true;
 int funcion(){
 	int d = 3;
 	a = (b+d)-2;
@@ -7,6 +9,8 @@ int funcion(){
 }
 int main(){
 	int e = 2+3;
+	int num;
+	char letra1= 'a';
 	funcion(e,b); 
 	if(a==b && e==2){
 		a=2;

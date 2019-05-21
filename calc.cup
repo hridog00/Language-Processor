@@ -172,7 +172,7 @@ DOSdim ::=
 	| ABRECOR DIM CIERRACOR 
 ;
 AsignacionDecl ::= ASIG Valores:v
-
+{: RESULT=new Sentencia("",v.resultado); :}
 
  | {: RESULT=new Sentencia("","None"); :}
 ;
@@ -204,7 +204,15 @@ TRUE
 | FALSE
 {: RESULT=new Sentencia("","False"); :} 
 ;
-Tipo ::=  INTEGER |REAL |CHAR |BOOLEAN
+Tipo ::=  INTEGER
+{: RESULT=new Sentencia("","int"); :} 
+ |REAL
+ {: RESULT=new Sentencia("","real"); :} 
+  |CHAR
+  {: RESULT=new Sentencia("","char"); :} 
+   |BOOLEAN
+   {: RESULT=new Sentencia("","bool"); :} 
+   
 ;
 //Funciones
 DeclaracionFuncion ::= Tipo:t ID:s ABREPAR  CIERRAPAR ABRELLAVE {: 
@@ -242,6 +250,7 @@ DeclaracionFuncion ::= Tipo:t ID:s ABREPAR  CIERRAPAR ABRELLAVE {:
 			 RESULT=resultSent;
 			 
 			 :}
+			
 ;
 
 ReturnSentencia ::= RETURN ExpresionNum:exprnum PTOYCOMA
@@ -280,7 +289,25 @@ RESULT=new Sentencia(lFunc.codigo,"");
   
   |ReturnSentencia:rs 
 {:RESULT=new Sentencia(rs.codigo,"");  :}
-			
+	|Tipo:t ID:s PTOYCOMA
+	{:System.out.println("entro en asignacion");
+	Sentencia resultSent=new Sentencia(s.nombre+"=None\n",s.nombre);
+								RESULT=resultSent;
+								s.valor="None";
+								
+								Simbolo sAux;
+								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
+									{
+									sAux=tabla.insertar(s);
+									}else{
+									report_fatal_error("Variable ya declarada",this.parser.cur_token);
+									
+									}
+										
+									
+									:}
+	
 ;
 Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
 {: 
@@ -288,7 +315,7 @@ System.out.println("entro en asignacion");
 Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
 								RESULT=resultSent;
 								s.valor=as.resultado;
-								
+								s.tipo = t.resultado;
 								Simbolo sAux;
 								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
