@@ -123,46 +123,32 @@ DeclaracionVar ::= DeclaracionTipoBasico:d1
 			
 				
 ;
-DeclaracionTipoBasico ::= Tipo ListaValores:l1 PTOYCOMA 
-{: 
-					RESULT=new Sentencia(l1.codigo, l1.resultado);
-					 :}
-;
-ListaValores ::= ID:s AsignacionDecl:a
+DeclaracionTipoBasico ::= Tipo:t ID:s AsignacionDecl:a PTOYCOMA 
+
 {: Sentencia resultSent=new Sentencia(s.nombre+"="+a.resultado+"\n",s.nombre);
 								RESULT=resultSent;
 								s.valor=a.resultado;
-								
+								if(a.codigo != "None"){
+									s.tipo = t.resultado;							
+									if(a.codigo == s.tipo){
+										System.out.println("Va bien");
+									}else{
+										report_fatal_error("ERROR:la asignacion no se corresponde al tipo declarado",this.parser.cur_token);
+										
+									}
+								}
 								Simbolo sAux;
 								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 									{
 									sAux=tabla.insertar(s);
 									}else{
-									sAux.valor=a.resultado;
-									
+										report_fatal_error("Variable ya declarada",this.parser.cur_token);									
 									}
 										
 									
 									:}
-				| ListaValores:lv1 COMA ID:s AsignacionDecl:a
-				{: Sentencia resultSent=new Sentencia(lv1.codigo+s.nombre+"="+a.resultado+"\n",s.nombre);
-								RESULT=resultSent;
-								s.valor=a.resultado;
-								
-								Simbolo sAux;
-								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
-								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
-									{
-									sAux=tabla.insertar(s);
-									System.out.println("Insertando "+sAux.nombre);
-									}else{
-									sAux.valor=a.resultado;
-									
-									}
-										
-									
-									:}
+				
 ;
 
 
@@ -172,37 +158,40 @@ DOSdim ::=
 	| ABRECOR DIM CIERRACOR 
 ;
 AsignacionDecl ::= ASIG Valores:v
-{: RESULT=new Sentencia("",v.resultado); :}
+{: RESULT=new Sentencia(v.codigo,v.resultado); :}
 
- | {: RESULT=new Sentencia("","None"); :}
+ | {: RESULT=new Sentencia("None","None"); :}
 ;
 
 Valores ::= CARACTER:c 
-
 {: 
   System.out.println("Entro en caracter");
-RESULT=new Sentencia("",c); 
+RESULT=new Sentencia("char",c); 
   System.out.println("Salgo en caracter");
 
 :} 
 
 |Bool_value:b 
-{: RESULT=new Sentencia("",b.resultado); :} 
+{: RESULT=new Sentencia("bool",b.resultado); :} 
 
 ;
 Numeros ::= NUM:n
-{: RESULT=new Sentencia("",n.toString()); :} 
+{: Sentencia s =new Sentencia("int",n.toString()); 
+	s.tipo  = "int";
+	RESULT = s;:} 
  
 |NUMREAL:n
-{: RESULT=new Sentencia("",n.toString()); :} 
+{: Sentencia s =new Sentencia("real",n.toString()); 
+	s.tipo  = "real";
+	RESULT = s;:} 
 
 
 ;
 Bool_value ::= 
 TRUE
-{: RESULT=new Sentencia("","True"); :} 
+{: RESULT=new Sentencia("bool","True"); :} 
 | FALSE
-{: RESULT=new Sentencia("","False"); :} 
+{: RESULT=new Sentencia("bool","False"); :} 
 ;
 Tipo ::=  INTEGER
 {: RESULT=new Sentencia("","int"); :} 
@@ -225,7 +214,10 @@ DeclaracionFuncion ::= Tipo:t ID:s ABREPAR  CIERRAPAR ABRELLAVE {:
 									System.out.println("Insertando "+sAux.nombre);
 									}
 			this.parser.analizadorLexico.getTabla().set(); :}  
+			
+			
 			ListaSentencias:ls
+			
 			 CIERRALLAVE {: 
 			 this.parser.analizadorLexico.getTabla().reset();
 			 Sentencia resultSent=new Sentencia("def "+s.nombre+"():\n"+ls.codigo,s.nombre);
@@ -244,6 +236,7 @@ DeclaracionFuncion ::= Tipo:t ID:s ABREPAR  CIERRAPAR ABRELLAVE {:
 									}
 			this.parser.analizadorLexico.getTabla().set(); :}  
 			ListaSentencias:ls
+			
 			 CIERRALLAVE {: 
 			 this.parser.analizadorLexico.getTabla().reset();
 			 Sentencia resultSent=new Sentencia("def "+s.nombre+"():\n"+ls.codigo,s.nombre);
@@ -316,6 +309,19 @@ Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
 								RESULT=resultSent;
 								s.valor=as.resultado;
 								s.tipo = t.resultado;
+								System.out.println(as.tipo+ s.tipo);
+									if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
+											System.out.println("Va bien");
+
+									}else if(as.tipo == "int" && s.tipo == "real"){
+										System.out.println("Todo ok");
+									}else{
+										if(as.tipo == s.tipo){
+											System.out.println("Va bien");
+										}else{
+											report_fatal_error("ERROR en asignacion",this.parser.cur_token);
+										}
+									}
 								Simbolo sAux;
 								TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
@@ -355,7 +361,10 @@ ArrElement ::= ID ABRECOR NUM CIERRACOR DOSdim
 ;
 AsigTipo ::= ExpresionNum:exprn
 {:
-RESULT = new Sentencia(exprn.codigo,exprn.codigo);
+
+Sentencia s = new Sentencia(exprn.codigo,exprn.codigo);
+s.tipo =  exprn.tipo;
+RESULT = s;
 :}
   | LlamadaFunc:lF 
   {:
@@ -371,8 +380,11 @@ RESULT = new Sentencia(v.resultado,v.resultado);
 
 
 Elemento ::= Numeros:num
-{: RESULT=new Sentencia("",num.resultado); :} 
-
+{: 
+	Sentencia s =new Sentencia("",num.resultado);
+	s.tipo  = num.tipo;
+	RESULT = s;
+	:}
  | ID:s
    {:Simbolo sAux;
   	TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
@@ -381,12 +393,18 @@ Elemento ::= Numeros:num
 	}
 									
 										
-   RESULT=new Sentencia("",sAux.nombre); :}
+   Sentencia sent=new Sentencia("",sAux.nombre);
+   sent.tipo = sAux.tipo; 
+	RESULT = sent;
+	:}
 ;
 ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 {: 
-	String temporal=nuevaTemporal();	
+	String temporal=nuevaTemporal();
+		
 	Sentencia resultSent= new Sentencia(e1.codigo+"+"+e2.codigo,temporal);
+	resultSent.tipo = "both";
+	
 	RESULT= resultSent; 
 :}
 
@@ -394,6 +412,9 @@ ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 {: 
 	String temporal=nuevaTemporal();	
 	Sentencia resultSent= new Sentencia(e1.codigo+"-"+e2.codigo,temporal);
+	resultSent.tipo = "both";
+
+	
 	RESULT= resultSent; 
 :}
 
@@ -401,27 +422,41 @@ ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 {: 
 	String temporal=nuevaTemporal();	
 	Sentencia resultSent= new Sentencia(e1.codigo+"*"+e2.codigo,temporal);
+	resultSent.tipo = "both";
+
+	
 	RESULT= resultSent; 
 :}
 | ExpresionNum:e1 DIV ExpresionNum:e2
 {: 
 	String temporal=nuevaTemporal();	
 	Sentencia resultSent= new Sentencia(e1.codigo+"/"+e2.codigo,temporal);
+
+	resultSent.tipo = "both";
+	
 	RESULT= resultSent; 
 :}
 | ExpresionNum:e1 MOD ExpresionNum:e2 
 {: 
 	String temporal=nuevaTemporal();	
 	Sentencia resultSent= new Sentencia(e1.codigo+"%"+e2.codigo,temporal);
+	if(e1.tipo != "int" || e2.tipo != "int"){
+		report_fatal_error("Operacion no soportada",this.parser.cur_token);
+	}
 	RESULT= resultSent; 
 :}
 | Elemento:el
-{: RESULT=new Sentencia(el.resultado,el.resultado); :} 
+{: Sentencia s =new Sentencia(el.resultado,el.resultado);
+	s.tipo = el.tipo;
+	RESULT = s;
+ :} 
 
 | MENOS ExpresionNum:e 
 {: 
 	String temporal=nuevaTemporal();	
 	Sentencia resultSent= new Sentencia("-"+e.codigo,temporal);
+		resultSent.tipo = "both";
+	
 	RESULT= resultSent; 
 :}
 
@@ -429,6 +464,8 @@ ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 {:
 	String temporal=nuevaTemporal();	
 	Sentencia resultSent= new Sentencia("("+e.codigo+")",temporal);
+		resultSent.tipo = "both";
+	
 	RESULT= resultSent; 
 :}
 
@@ -489,7 +526,8 @@ ExprLogica ::= Expr:exprl TipoExpr:tipo_expr
 | ABREPAR Expr:exprl TipoExpr:tipo_expr CIERRAPAR 
 ;
 TipoExpr ::= EQUAL Expr:exprl1
-{:	RESULT = new Sentencia("=="+exprl1.codigo,""); :}
+{:	RESULT = new Sentencia("=="+exprl1.codigo,"");
+ :}
 | NOT_EQUAL Expr:exprl1
 {:	RESULT = new Sentencia("!="+exprl1.codigo,""); :}
  |BIGGER Expr:exprl1
@@ -526,7 +564,6 @@ SentenciaElse::=
 
 | ELSE ABRELLAVE  {:this.parser.analizadorLexico.getTabla().set();:} ListaSentencias:ls CIERRALLAVE
 {:
-	
 	
 	this.parser.analizadorLexico.getTabla().reset();
 	ls.codigo = ls.codigo.replace("\n", "\n\t");
