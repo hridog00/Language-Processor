@@ -59,6 +59,9 @@ import java.io.*;
 "]" { return new Symbol(sym.CIERRACOR); }
 ":" { return new Symbol(sym.DOSPUNTOS); }
 "," { return new Symbol(sym.COMA); }
+"read" { return new Symbol(sym.READ); }
+"print" { return new Symbol(sym.PRINT); }
+"//"([a-zA-Z]*[ ]*[0-9]*)* { return new Symbol(sym.COMENTARIO, new String(yytext())); }
 [:digit:]+ { return new Symbol(sym.NUM, new Integer(yytext())); }
 [:digit:]+\.[:digit:]+ { return new Symbol(sym.NUMREAL, new Float(yytext())); }
 [:jletter:][:jletterdigit:]* {
