@@ -67,7 +67,7 @@ action code {:
 //scan with {: return this.getScanner().next_token(); :};
 
 /*Terminales tokens que puede devolver el lexico*/
-terminal INTEGER,REAL,CHAR,BOOLEAN, READ;
+terminal INTEGER,REAL,CHAR,BOOLEAN, READ, PRINT;
 terminal  AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
 terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
 terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
@@ -81,10 +81,10 @@ terminal boolean TRUE, FALSE;
 
 non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, ListaValores, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
 non terminal programa;
-non terminal Sentencia SenteicaIf, SentenciaElse, SentenciaWhile, Comentario;
+non terminal Sentencia SenteicaIf, SentenciaElse, SentenciaWhile, Comentario, Imprimir, expPrint, expPrint_P;
 non terminal Sentencia ListaExprLogicas, ExprLogica, TipoExpr, Expr;
 non terminal Sentencia ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value,  ReturnSentencia;
-non terminal  Sentencia listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,   FuncionTipo, ReturnTipo, ArrElement;
+non terminal  Sentencia listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,DOSdimAsig  , FuncionTipo, ReturnTipo, ArrElement;
 non terminal Sentencia Valores, Numeros, Tipo, Read;
 
 
@@ -117,11 +117,13 @@ listaDeclaraciones ::=  listaDeclaraciones:l DeclaracionVar:d
 ;
 DeclaracionVar ::= DeclaracionTipoBasico:d1
 				{: 
-					
-					
+				
 					RESULT=new Sentencia(d1.codigo,d1.resultado);
 					 :}
-				| DeclaracionArr
+				| DeclaracionArr:d1
+				{: 
+					RESULT=new Sentencia(d1.codigo,d1.resultado);
+					 :}
 			
 				
 ;
@@ -154,10 +156,32 @@ DeclaracionTipoBasico ::= Tipo:t ID:s AsignacionDecl:a PTOYCOMA
 ;
 
 
-DeclaracionArr ::= Tipo ID ABRECOR NUM CIERRACOR DOSdim PTOYCOMA
+DeclaracionArr ::= Tipo:t ID:s ABRECOR NUM:tam CIERRACOR DOSdim:d2 PTOYCOMA
+                {:
+                Sentencia resultSent=new Sentencia(s.nombre+"=np.zeros(["+tam+d2.codigo+"])\n",s.nombre);
+				RESULT=resultSent;
+				s.tipo = t.resultado;
+                s.tam = tam;
+                s.tam2 = Integer.parseInt(d2.resultado);
+                Simbolo sAux;
+				TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+				if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+					sAux=tabla.insertar(s);
+				}else{
+					report_fatal_error("Variable ya declarada",this.parser.cur_token);									
+				}
+				RESULT = resultSent;
+                :}
 ;
 DOSdim ::=  
-	| ABRECOR DIM CIERRACOR 
+        {:Sentencia resultSent=new Sentencia("","0");
+        	RESULT = resultSent;
+        :}
+	    | ABRECOR NUM:tam CIERRACOR 
+        {:Sentencia resultSent=new Sentencia(","+tam,String.valueOf(tam));
+           RESULT = resultSent;
+        
+        :}
 ;
 AsignacionDecl ::= ASIG Valores:v
 {: RESULT=new Sentencia(v.codigo,v.resultado); :}
@@ -266,7 +290,7 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 ;
 
 ReturnSentencia ::= RETURN ExpresionNum:exprnum PTOYCOMA
-{:Sentencia s =new Sentencia("return "+exprnum.codigo+"\n",""); 
+{:Sentencia s =new Sentencia("\treturn "+exprnum.codigo+"\n",""); 
 
 	s.tipo = exprnum.tipo;
 	RESULT = s;
@@ -293,7 +317,10 @@ System.out.println("Entro aqui: sentencia vacia");
 :}
 
 ;
-Sentence ::= Asignacion:a PTOYCOMA 
+Sentence ::= DeclaracionArr:darr
+            {: RESULT=new Sentencia(darr.codigo,""); :}
+
+|Asignacion:a PTOYCOMA 
 {:
 RESULT=new Sentencia(a.codigo,""); 
 :}
@@ -328,6 +355,8 @@ RESULT=new Sentencia(lFunc.codigo,"");
 									
 									:}
 	| COMENTARIO:com {:RESULT=new Sentencia("#"+ com.substring(2) + "\n", "");:}
+	
+	|Read: rd {:RESULT=new Sentencia(rd.codigo+ "\n", "");:}
 	
 ;
 Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
@@ -398,10 +427,50 @@ Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
 									
 									:}
 
- | ArrElement ASIG AsigTipo
+ |ArrElement:s ASIG AsigTipo:as
+        {:
+         if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
+			System.out.println("Va bien");
+		}else if(as.tipo == "int" && s.tipo == "real"){
+			System.out.println("Todo ok");
+		}else{
+			if(as.tipo == s.tipo){
+			System.out.println("Va bien");
+		}else{
+			report_fatal_error("ERROR en asignacion",this.parser.cur_token);
+			}
+		}
+        Sentencia sent = new Sentencia(s.codigo+"="+as.codigo+"\n","");
+        RESULT = sent;
+         :}
 ;
-ArrElement ::= ID ABRECOR NUM CIERRACOR DOSdim
+ArrElement ::= ID:s ABRECOR NUM:posx CIERRACOR DOSdimAsig:d2
+            {:
+                Sentencia resultSent=new Sentencia(s.nombre+"["+posx+"]"+d2.codigo,s.nombre);
+                Simbolo sAux;
+				TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+				if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+					report_fatal_error("Variable sin declarar",this.parser.cur_token);
+				}else{
+					if((sAux.tam <= posx) || (sAux.tam2 <= Integer.parseInt(d2.resultado))){
+                        report_fatal_error("Index fuera de limites del array",this.parser.cur_token);
+                    }									
+				}
+                resultSent.tipo = sAux.tipo;
+                RESULT=resultSent;
+            :}
 ;
+
+DOSdimAsig ::=  
+        {:Sentencia resultSent=new Sentencia("","0");
+        	RESULT = resultSent;
+        :}
+	    | ABRECOR NUM:tam CIERRACOR 
+        {:Sentencia resultSent=new Sentencia("["+tam+"]",String.valueOf(tam));
+           RESULT = resultSent;
+        
+        :}
+      ;
 AsigTipo ::= ExpresionNum:exprn
 {:
 
@@ -429,7 +498,7 @@ s.tipo = v.codigo;
 
 Elemento ::= Numeros:num
 {: 
-	Sentencia s =new Sentencia("",num.resultado);
+	Sentencia s =new Sentencia(num.resultado,num.resultado);
 	s.tipo  = num.tipo;
 	RESULT = s;
 	:}
@@ -439,13 +508,13 @@ Elemento ::= Numeros:num
   	if ((sAux=tabla.buscarGlobal(s.nombre))==null){
 		report_fatal_error("Variable no inicializada",this.parser.cur_token);
 	}
-									
-										
-   Sentencia sent=new Sentencia("",sAux.nombre);
+																				
+   Sentencia sent=new Sentencia(sAux.nombre,sAux.nombre);
    sent.tipo = sAux.tipo; 
 	RESULT = sent;
 	:}
-	| COMENTARIO:com {:RESULT=new Sentencia("#"+ com.substring(2) + "\n", "");:}
+	| ArrElement:arr
+        {:RESULT = new Sentencia(arr.codigo,arr.codigo);:}
 ;
 ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 {: 
@@ -597,7 +666,7 @@ TipoExpr ::= EQUAL Expr:exprl1
   |EQUAL Valores:v
 {:	RESULT = new Sentencia("=="+v.resultado,""); :}
 ;
-Expr ::= ArrElement | Elemento:elemto
+Expr ::= Elemento:elemto
 {:  	RESULT = new Sentencia(elemto.resultado,"");
 :}
   
@@ -687,4 +756,30 @@ Read ::=READ ABREPAR ID:s CIERRAPAR PTOYCOMA {:
 									report_fatal_error("Variable sin declarar",this.parser.cur_token);
 									}
 RESULT = new Sentencia (s.nombre + "= input()","");:}
+;
+Imprimir::= PRINT ABREPAR expPrint:expr CIERRAPAR PTOYCOMA
+{: RESULT = new Sentencia ("print("+expr.codigo+")","");:}
+;
+
+expPrint::=
+{: RESULT = new Sentencia("", ""); :}
+
+|Valores:valores expPrint_P:i
+{: RESULT = new Sentencia(valores.resultado+i.codigo, ""); :}
+|ExpresionNum:expr expPrint_P:i
+{: RESULT = new Sentencia(expr.codigo+i.codigo, ""); :}
+;
+expPrint_P::=
+	{: 
+	RESULT = new Sentencia("", ""); 
+	:}
+	
+	
+	|COMA Valores:valores expPrint_P:e
+	{: 
+	RESULT = new Sentencia(","+valores.resultado+e.codigo, "");
+	:}
+	|ExpresionNum:expr expPrint:e
+	{: RESULT = new Sentencia(","+expr.codigo+e.codigo, "");
+	:}
 ;
