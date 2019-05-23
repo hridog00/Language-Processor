@@ -72,7 +72,7 @@ terminal  AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
 terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
 terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
 terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,DOSPUNTOS,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
-terminal String COMENTARIO;
+terminal String COMENTARIO, TEXTO;
 terminal String CARACTER;
 terminal Simbolo ID;
 terminal Integer NUM,DIM;
@@ -94,7 +94,7 @@ precedence left UMENOS;
 /*Gramatica*/
 
 programa ::= listaDeclaraciones:l
-			 {: System.out.println("Código generado:\n" + l.codigo); :}
+			 {: System.out.println("Código generado:\n\nimport numpy as np\n" + l.codigo+"main()"); :}
 	
 			| programa error PTOYCOMA
 			{: this.parser.error_sintactico(this.parser.cur_token);:}
@@ -240,7 +240,8 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 									sAux=tabla.insertar(s);
 									System.out.println("Insertando "+sAux.nombre);
 									}
-			this.parser.analizadorLexico.getTabla().set(); :}  ABREPAR listaargumentos:la CIERRAPAR ABRELLAVE 
+			this.parser.analizadorLexico.getTabla().set(); :}  ABREPAR listaargumentos:la  {:			 s.tam = Integer.parseInt(la.resultado);
+			:} CIERRAPAR ABRELLAVE 
 			
 			
 			ListaSentencias:ls
@@ -355,8 +356,9 @@ RESULT=new Sentencia(lFunc.codigo,"");
 									
 									:}
 	| COMENTARIO:com {:RESULT=new Sentencia("#"+ com.substring(2) + "\n", "");:}
-	
 	|Read: rd {:RESULT=new Sentencia(rd.codigo+ "\n", "");:}
+	|Imprimir: rd {:RESULT=new Sentencia(rd.codigo+ "\n", "");:}
+	
 	
 ;
 Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
@@ -763,10 +765,11 @@ Imprimir::= PRINT ABREPAR expPrint:expr CIERRAPAR PTOYCOMA
 
 expPrint::=
 {: RESULT = new Sentencia("", ""); :}
-
+|TEXTO:t expPrint_P:i
+{: RESULT = new Sentencia(t+i.codigo, ""); :}
 |Valores:valores expPrint_P:i
 {: RESULT = new Sentencia(valores.resultado+i.codigo, ""); :}
-|ExpresionNum:expr expPrint_P:i
+|Elemento:expr expPrint_P:i
 {: RESULT = new Sentencia(expr.codigo+i.codigo, ""); :}
 ;
 expPrint_P::=
@@ -775,11 +778,13 @@ expPrint_P::=
 	:}
 	
 	
-	|COMA Valores:valores expPrint_P:e
+	|MAS Valores:valores expPrint_P:e
 	{: 
 	RESULT = new Sentencia(","+valores.resultado+e.codigo, "");
 	:}
-	|ExpresionNum:expr expPrint:e
+	|MAS Elemento:expr expPrint:e
 	{: RESULT = new Sentencia(","+expr.codigo+e.codigo, "");
 	:}
+	|MAS TEXTO:t expPrint_P:i
+{: RESULT = new Sentencia(","+t+i.codigo, ""); :}
 ;

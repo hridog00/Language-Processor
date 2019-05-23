@@ -14,22 +14,22 @@ public interface sym {
   public static final int INTEGER = 2;
   public static final int SMALLER = 23;
   public static final int AND = 8;
-  public static final int CARACTER = 38;
+  public static final int CARACTER = 39;
   public static final int OR = 9;
   public static final int SMALLER_EQUAL = 24;
   public static final int DIV = 18;
-  public static final int NUM = 40;
+  public static final int NUM = 41;
   public static final int PTOYCOMA = 31;
   public static final int IF = 10;
   public static final int UMENOS = 20;
-  public static final int ID = 39;
-  public static final int DIM = 41;
+  public static final int ID = 40;
+  public static final int DIM = 42;
   public static final int EOF = 0;
   public static final int BOOLEAN = 5;
   public static final int RETURN = 36;
   public static final int ASIG = 32;
   public static final int EQUAL = 12;
-  public static final int TRUE = 43;
+  public static final int TRUE = 44;
   public static final int error = 1;
   public static final int COMA = 30;
   public static final int COMENTARIO = 37;
@@ -39,7 +39,7 @@ public interface sym {
   public static final int MOD = 19;
   public static final int BIGGER = 21;
   public static final int VOID = 35;
-  public static final int NUMREAL = 42;
+  public static final int NUMREAL = 43;
   public static final int CIERRAPAR = 26;
   public static final int REAL = 3;
   public static final int ABRECOR = 27;
@@ -48,7 +48,8 @@ public interface sym {
   public static final int READ = 6;
   public static final int ABREPAR = 25;
   public static final int WHILE = 14;
-  public static final int FALSE = 44;
+  public static final int TEXTO = 38;
+  public static final int FALSE = 45;
   public static final int PRINT = 7;
   public static final int MAS = 15;
   public static final String[] terminalNames = new String[] {
@@ -90,6 +91,7 @@ public interface sym {
   "VOID",
   "RETURN",
   "COMENTARIO",
+  "TEXTO",
   "CARACTER",
   "ID",
   "NUM",
