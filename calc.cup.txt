@@ -1,0 +1,658 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.*;
+
+parser code {:
+
+Yylex analizadorLexico;
+
+public static void main(String[] argv){
+	if (argv.length == 0) {
+		      System.out.println("Uso : java Parser  <inputfile)>");
+		    }
+	else{
+	try {
+		TablaSimbolos tabla = new TablaSimbolos();
+		java.io.FileInputStream stream = new java.io.FileInputStream(argv[0]);
+	    java.io.Reader reader = new java.io.InputStreamReader(stream);
+		Yylex analizadorLexico= new Yylex(reader,tabla);
+		Parser parserObj = new Parser();
+		parserObj.analizadorLexico=analizadorLexico;
+		parserObj.setScanner(parserObj.analizadorLexico);
+		parserObj.parse();
+		}
+		catch(Exception x) {
+		System.out.println("Error fatal."+x.toString());
+		}
+	}
+}
+
+public void error_sintactico(Symbol current_token){
+  report_error("Error de sintaxis: linea "+analizadorLexico.linea()+" columna "+analizadorLexico.columna(),current_token);
+  
+}
+
+
+
+:};
+
+action code {:
+      private  int vtemporal=0;
+      public  String nuevaTemporal()
+      {
+      	return "tmp"+(++vtemporal);
+      }
+      private  int etiqActual=0;
+      public  String nuevaEtiqueta()
+      {
+      	return "etiqCP_"+(++etiqActual);
+      }
+      class BloqueCondicion {
+	 String etqCierto, etqFalso,codigo;
+	 }
+	 private BloqueCondicion generarCondicion(String condicion)
+	 {
+	 BloqueCondicion bCond=new BloqueCondicion();
+	 bCond.etqCierto=nuevaEtiqueta();
+	 bCond.etqFalso=nuevaEtiqueta();
+	 bCond.codigo="if_false,"+condicion+","+bCond.etqFalso+";\ngoto,"+bCond.etqCierto+";\n";
+	 return bCond;
+	 }
+	 
+      
+:}
+
+//init with {: s.init(); :};
+/*Siguiente token al lexico*/
+//scan with {: return this.getScanner().next_token(); :};
+
+/*Terminales tokens que puede devolver el lexico*/
+terminal INTEGER,REAL,CHAR,BOOLEAN, READ;
+terminal  AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
+terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
+terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
+terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,DOSPUNTOS,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
+terminal String COMENTARIO;
+terminal String CARACTER;
+terminal Simbolo ID;
+terminal Integer NUM,DIM;
+terminal Float NUMREAL;
+terminal boolean TRUE, FALSE;
+
+non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, ListaValores, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
+non terminal programa;
+non terminal Sentencia SenteicaIf, SentenciaElse, SentenciaWhile, Comentario;
+non terminal Sentencia ListaExprLogicas, ExprLogica, TipoExpr, Expr;
+non terminal Sentencia ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value,  ReturnSentencia;
+non terminal  Sentencia listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,   FuncionTipo, ReturnTipo, ArrElement;
+non terminal Sentencia Valores, Numeros, Tipo, Read;
+
+
+precedence left MAS, MENOS;
+precedence left MULT,DIV,MOD;
+precedence left UMENOS;
+/*Gramatica*/
+
+programa ::= listaDeclaraciones:l
+			 {: System.out.println("Código generado:\n\nimport numpy as np" + l.codigo+"\nmain()"); :}
+	
+			| programa error PTOYCOMA
+			{: this.parser.error_sintactico(this.parser.cur_token);:}
+			
+;
+listaDeclaraciones ::=  listaDeclaraciones:l DeclaracionVar:d
+					{: 
+
+					RESULT=new Sentencia(l.codigo+""+d.codigo,"");
+					 :}  
+					|  listaDeclaraciones:l DeclaracionFuncion:df
+					{: 
+					System.out.println("DECLARACION FUNCION:"+df.codigo);
+					RESULT=new Sentencia(l.codigo+""+df.codigo,"");
+					 :} 
+					
+					| {: RESULT=new Sentencia("",""); :}
+					
+					| COMENTARIO:com {:RESULT=new Sentencia("#"+ com.substring(2) + "\n", "");:}
+;
+DeclaracionVar ::= DeclaracionTipoBasico:d1
+				{: 
+					RESULT=new Sentencia(d1.codigo,d1.resultado);
+				 :}
+				| DeclaracionArr
+			
+				
+;
+DeclaracionTipoBasico ::= Tipo:t ID:s AsignacionDecl:a PTOYCOMA 
+                        {: Sentencia resultSent=new Sentencia(s.nombre+"="+a.resultado+"\n",s.nombre);
+							RESULT=resultSent;
+							s.valor=a.resultado;
+                            s.tipo = t.resultado;
+							if(a.codigo != "None"){
+								s.tipo = t.resultado;							
+								if(a.codigo == s.tipo){
+									System.out.println("Va bien");
+								}else{
+									report_fatal_error("ERROR:la asignacion no se corresponde al tipo declarado",this.parser.cur_token);
+										
+								}
+							}
+							Simbolo sAux;
+							TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+							if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+								sAux=tabla.insertar(s);
+							}else{
+								report_fatal_error("Variable ya declarada",this.parser.cur_token);									
+							}			
+                        :}
+;
+
+
+DeclaracionArr ::= Tipo:t ID:s ABRECOR NUM:tam CIERRACOR DOSdim:d2 PTOYCOMA
+                {:
+                Sentencia resultSent=new Sentencia(s.nombre+"=np.zeros(["+tam+d2.codigo+"])\n",s.nombre);
+				RESULT=resultSent;
+				s.tipo = t.resultado;
+                s.tam = tam;
+                s.tam2 = d2.resultado;
+                Simbolo sAux;
+				TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+				if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+					sAux=tabla.insertar(s);
+				}else{
+					report_fatal_error("Variable ya declarada",this.parser.cur_token);									
+				}
+                :}
+;
+DOSdim ::=  
+        {Sentencia resultSent=new Sentencia("","0");}
+	    | ABRECOR NUM:tam CIERRACOR 
+        {Sentencia resultSent=new Sentencia(",+tam+",String.valueOf(tam));}
+;
+AsignacionDecl ::= ASIG Valores:v
+                {: RESULT=new Sentencia(v.codigo,v.resultado); :}
+                | {: RESULT=new Sentencia("None","None"); :}
+;
+
+Valores ::= CARACTER:c 
+	    {: 
+	    System.out.println("Entro en caracter");
+	    RESULT=new Sentencia("char",c); 
+	     System.out.println("Salgo en caracter");
+    	:} 
+	    |Bool_value:b 
+	    {: RESULT=new Sentencia("bool",b.resultado); :} 
+;
+Numeros ::= NUM:n
+        {: Sentencia s =new Sentencia("int",n.toString()); 
+	    s.tipo  = "int";
+	    RESULT = s;:} 
+        |NUMREAL:n
+        {: Sentencia s =new Sentencia("real",n.toString()); 
+        s.tipo  = "real";
+        RESULT = s;
+        :} 
+;
+Bool_value ::= TRUE
+                {: RESULT=new Sentencia("bool","True"); :} 
+                | FALSE
+                {: RESULT=new Sentencia("bool","False"); :} 
+;
+Tipo ::=  INTEGER
+        {: RESULT=new Sentencia("","int"); :} 
+        |REAL
+        {: RESULT=new Sentencia("","real"); :} 
+        |CHAR
+        {: RESULT=new Sentencia("","char"); :} 
+        |BOOLEAN
+        {: RESULT=new Sentencia("","bool"); :} 
+        
+;
+//Funciones
+DeclaracionFuncion ::= Tipo:t ID:s 
+                        {: Simbolo sAux;
+                            TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+                            s.tipo = t.resultado;
+							if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+								sAux=tabla.insertar(s);
+								System.out.println("Insertando "+sAux.nombre);
+							}
+			                this.parser.analizadorLexico.getTabla().set(); :}  
+                            ABREPAR listaargumentos:la CIERRAPAR ABRELLAVE ListaSentencias:ls ReturnSentencia:rs CIERRALLAVE
+                         {: 
+                            this.parser.analizadorLexico.getTabla().reset();
+                            Sentencia resultSent=new Sentencia("def "+s.nombre+"("+la.codigo+"):\n"+ls.codigo+rs.codigo,s.nombre);
+                            System.out.println(rs.tipo +s.tipo);
+                            s.tam = Integer.parseInt(la.resultado);
+                            System.out.println("TAMAÑO FUNCION:"+la.resultado);
+                            
+                            if (rs.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
+                                System.out.println("Va bien");
+
+                                }else if(rs.tipo == "int" && s.tipo == "real"){
+                                    System.out.println("Todo ok");
+                                }else{
+                                    if(rs.tipo == s.tipo){
+                                        System.out.println("Va bien");
+                                    }else{
+                                        report_fatal_error("EL return no cuadra",this.parser.cur_token);
+                                    }
+                                }
+                            RESULT=resultSent;
+			            :}
+
+|  VOID ID:s {: Simbolo sAux;
+                            TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+                            s.tipo = t.resultado;
+							if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+								sAux=tabla.insertar(s);
+								System.out.println("Insertando "+sAux.nombre);
+							}
+			                this.parser.analizadorLexico.getTabla().set(); :}  
+                            ABREPAR listaargumentos:la CIERRAPAR ABRELLAVE  
+			                ListaSentencias:ls CIERRALLAVE {: 
+                            this.parser.analizadorLexico.getTabla().reset();
+                            this.parser.analizadorLexico.getTabla().reset();
+                            Sentencia resultSent=new Sentencia("def "+s.nombre+"("+la.codigo+"):\n"+ls.codigo,s.nombre);
+                            s.tam = Integer.parseInt(la.resultado);
+                            Sentencia resultSent=new Sentencia("def "+s.nombre+"():\n"+ls.codigo,s.nombre);
+                            RESULT=resultSent;
+			 :}
+			
+;
+
+ReturnSentencia ::= RETURN ExpresionNum:exprnum PTOYCOMA
+                {:Sentencia s =new Sentencia("return "+exprnum.codigo+"\n",""); 
+	            s.tipo = exprnum.tipo;
+	            RESULT = s;
+                :}
+                | RETURN Valores:v PTOYCOMA
+                {:Sentencia s =new Sentencia("return "+v.resultado+"\n","");
+                s.tipo = v.codigo;
+                RESULT= s;
+                :}
+;
+
+ListaSentencias ::= ListaSentencias:ls1 Sentence:s 
+                    {:System.out.println("Entro aqui: sentencia NO vacia:");
+                    RESULT=new Sentencia(ls1.codigo+"\t"+s.codigo,""); 
+                    :}
+                    |
+                    {:RESULT=new Sentencia("",""); :}
+;
+
+Sentence ::= DeclaracionArr:darr
+            {: RESULT=new Sentencia(darr.codigo,""); :}
+            Asignacion:a PTOYCOMA 
+            {: RESULT=new Sentencia(a.codigo,""); :}
+            | LlamadaFunc:lFunc PTOYCOMA{:
+            RESULT=new Sentencia(lFunc.codigo,""); 
+            :}
+            | SenteicaIf:sif 
+            {:RESULT=new Sentencia(sif.codigo,"");  :}
+            | SentenciaWhile :sw
+            {:RESULT=new Sentencia(sw.codigo,"");  :}
+	        |Tipo:t ID:s PTOYCOMA
+	        {:System.out.println("entro en asignacion");
+	        Sentencia resultSent=new Sentencia(s.nombre+"=None\n",s.nombre);
+			RESULT=resultSent;
+		    s.valor="None";
+			s.tipo = t.resultado;
+			Simbolo sAux;
+			TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+			if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+				sAux=tabla.insertar(s);
+			}else{
+				report_fatal_error("Variable ya declarada",this.parser.cur_token);						
+			}
+            :}
+	        | COMENTARIO:com 
+            {:RESULT=new Sentencia("#"+ com.substring(2) + "\n", "");:}
+            | Read:rd
+            {:RESULT =   new Sentencia(rd.codigo,""):}	
+;
+Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
+            {: System.out.println("entro en asignacion");
+            Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
+			RESULT=resultSent;
+			s.valor=as.resultado;
+			s.tipo = t.resultado;
+			System.out.println(as.tipo+ s.tipo);
+			if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
+				System.out.println("Va bien");
+			}else if(as.tipo == "int" && s.tipo == "real"){
+				System.out.println("Todo ok");
+			}else{
+				if(as.tipo == s.tipo){
+			        System.out.println("Va bien");
+				}else{
+					report_fatal_error("ERROR en asignacion",this.parser.cur_token);
+				}
+		    }
+			Simbolo sAux;
+			TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+			if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+				sAux=tabla.insertar(s);
+			}else{
+				report_fatal_error("Variable ya declarada",this.parser.cur_token);						
+			}		
+			:}
+            |ID:s ASIG AsigTipo:as
+            {:
+			Simbolo sAux;
+			TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+			if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+				report_fatal_error("Variable no inicializada",this.parser.cur_token);
+				}else{
+					s.tipo = sAux.tipo;
+					System.out.println(as.tipo+ s.tipo);
+					if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
+						System.out.println("Va bien");
+					}else if(as.tipo == "int" && s.tipo == "real"){
+						System.out.println("Todo ok");
+					}else{
+						if(as.tipo == s.tipo){
+							System.out.println("Va bien");
+					    }else{
+							report_fatal_error("ERROR en asignacion",this.parser.cur_token);
+						}
+					}
+									
+						Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
+						RESULT=resultSent;
+						s.valor=as.resultado;
+						sAux.valor=as.resultado;					
+				}												
+			:}
+        | ArrElement:s ASIG AsigTipo:as
+        {:
+         if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
+			System.out.println("Va bien");
+		}else if(as.tipo == "int" && s.tipo == "real"){
+			System.out.println("Todo ok");
+		}else{
+			if(as.tipo == s.tipo){
+			System.out.println("Va bien");
+		}else{
+			report_fatal_error("ERROR en asignacion",this.parser.cur_token);
+			}
+		}
+        Sentencia sent = new Sentencia(s.codigo+"="as.codigo+"\n","");
+        RESULT = sent;
+         :}
+
+;
+ArrElement ::= ID:s ABRECOR NUM:posx CIERRACOR DOSdim:2d
+            {:
+                Sentencia resultSent=new Sentencia(s.nombre+"["+posx+"]"+d2.codigo,s.nombre);
+                Simbolo sAux;
+				TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+				if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+					report_fatal_error("Variable sin declarar",this.parser.cur_token);
+				}else{
+					if(sAux.tam <= posx || sAux.tam2 <= 2d.resultado){
+                        report_fatal_error("Index fuera de limites del array",this.parser.cur_token);
+                    }									
+				}
+                resultSent.tipo = sAux.tipo;
+                RESULT=resultSent;
+            :}
+;
+AsigTipo ::= ExpresionNum:exprn
+            {:
+            Sentencia s = new Sentencia(exprn.codigo,exprn.codigo);
+            s.tipo =  exprn.tipo;
+            RESULT = s;
+            :}
+            | LlamadaFunc:lF 
+            {:
+            Sentencia sent = new Sentencia(lF.codigo,lF.codigo);
+            sent.tipo = lF.tipo;
+            RESULT = sent;
+            :}
+            |  Valores: v
+            {:
+             System.out.println("Entro en asig tipo valores");
+            Sentencia s = new Sentencia(v.resultado,v.resultado);
+            s.tipo = v.codigo;
+	        RESULT = s;
+            :}
+;
+
+Elemento ::= Numeros:num
+        {: 
+        Sentencia s =new Sentencia("",num.resultado);
+        s.tipo  = num.tipo;
+        RESULT = s;
+        :}
+        | ID:s
+        {:Simbolo sAux;
+        TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+        if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+            report_fatal_error("Variable no inicializada",this.parser.cur_token);
+        }									
+		Sentencia sent=new Sentencia("",sAux.nombre);
+        sent.tipo = sAux.tipo; 
+	    RESULT = sent;
+	    :}
+        |ArrElement:arr
+        {:RESULT = arr:}
+
+;
+ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
+                {: 
+                String temporal=nuevaTemporal();
+                Sentencia resultSent= new Sentencia(e1.codigo+"+"+e2.codigo,temporal);
+                if(e1.tipo == 'char' || e1.tipo=='bool' || e2.tipo == 'char' || e2.tipo=='bool'){
+                    report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                }
+                resultSent.tipo = "both";
+                RESULT= resultSent; 
+                :}
+                | ExpresionNum:e1 MENOS ExpresionNum:e2
+                {: 
+                String temporal=nuevaTemporal();	
+                Sentencia resultSent= new Sentencia(e1.codigo+"-"+e2.codigo,temporal);
+                if(e1.tipo == 'char' || e1.tipo=='bool' || e2.tipo == 'char' || e2.tipo=='bool'){
+                    report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                }
+                resultSent.tipo = "both";
+                RESULT= resultSent; 
+                :}
+                | ExpresionNum:e1 MULT ExpresionNum:e2 
+                {: 
+                    String temporal=nuevaTemporal();	
+                    Sentencia resultSent= new Sentencia(e1.codigo+"*"+e2.codigo,temporal);
+                    if(e1.tipo == 'char' || e1.tipo=='bool' || e2.tipo == 'char' || e2.tipo=='bool'){
+                        report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                    }
+                    resultSent.tipo = "both";
+                    RESULT= resultSent; 
+                :}
+                | ExpresionNum:e1 DIV ExpresionNum:e2
+                {: 
+                    String temporal=nuevaTemporal();	
+                    Sentencia resultSent= new Sentencia(e1.codigo+"/"+e2.codigo,temporal);
+                    if(e1.tipo == 'char' || e1.tipo=='bool' || e2.tipo == 'char' || e2.tipo=='bool'){
+                        report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                    }
+                    resultSent.tipo = "both";
+                    RESULT= resultSent; 
+                :}
+                | ExpresionNum:e1 MOD ExpresionNum:e2 
+                {: 
+                    String temporal=nuevaTemporal();	
+                    Sentencia resultSent= new Sentencia(e1.codigo+"%"+e2.codigo,temporal);
+                    if(e1.tipo != "int" || e2.tipo != "int"){
+                        report_fatal_error("Operacion no soportada",this.parser.cur_token);
+                    }
+                    RESULT= resultSent; 
+                :}
+                | Elemento:el
+                {: Sentencia s =new Sentencia(el.resultado,el.resultado);
+                    s.tipo = el.tipo;
+                    RESULT = s;
+                :} 
+
+                | MENOS ExpresionNum:e 
+                {: 
+                    String temporal=nuevaTemporal();	
+                    Sentencia resultSent= new Sentencia("-"+e.codigo,temporal);
+                    if(e1.tipo == 'char' || e1.tipo=='bool' || e2.tipo == 'char' || e2.tipo=='bool'){
+                        report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                    }
+                    resultSent.tipo = "both";
+                    RESULT= resultSent; 
+                :}
+
+                | ABREPAR ExpresionNum:e CIERRAPAR 
+                {:
+                    String temporal=nuevaTemporal();	
+                    Sentencia resultSent= new Sentencia("("+e.codigo+")",temporal);
+                    if(e1.tipo == 'char' || e1.tipo=='bool' || e2.tipo == 'char' || e2.tipo=='bool'){
+                        report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                    }
+                    resultSent.tipo = "both";
+                    RESULT= resultSent; 
+                :}
+
+;
+
+
+
+LlamadaFunc ::= ID:s ABREPAR ListaParam:l CIERRAPAR
+            {:
+                Simbolo sAux;
+                TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+                if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+                    report_fatal_error("Variable no inicializada",this.parser.cur_token);
+                }
+                System.out.println("PARAMETROS"+Integer.parseInt(l.resultado));
+                if(sAux.tam != Integer.parseInt(l.resultado)){
+                    report_fatal_error("Numero de parametros incorrecto",this.parser.cur_token);
+                }
+                Sentencia resultSent= new Sentencia(s.nombre+"("+l.codigo+")\n", l.resultado);
+                resultSent.tipo = sAux.tipo;
+                RESULT= resultSent; 
+            :}
+;
+ListaParam ::=  Elemento:elem  ListaParam_p:lp
+            {:
+                Sentencia resultSent= new Sentencia(elem.resultado+lp.codigo,String.valueOf(1+Integer.parseInt(lp.resultado)));
+                RESULT= resultSent; 
+            :}
+            | {:RESULT = new Sentencia("","0");:}
+;
+ListaParam_p ::= {:RESULT = new Sentencia("","0");:}
+            | COMA Elemento:elem ListaParam_p:lp1 
+            {:
+	        RESULT = new Sentencia(","+elem.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));
+            :}
+            | COMA Valores:v ListaParam_p:lp1
+            {:	RESULT = new Sentencia(","+v.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));:}
+;
+ListaExprLogicas ::= ExprLogica:ex_logica1 AND ListaExprLogicas:l_exp
+                    {: RESULT= new Sentencia(ex_logica1.codigo +" and "+l_exp.codigo,""); :}
+                    | ExprLogica:ex_logica1 OR ListaExprLogicas:l_exp
+                    {: RESULT= new Sentencia(ex_logica1.codigo +" or "+l_exp.codigo,""); :}
+                    | ExprLogica:e
+                    {: 
+                        System.out.println("Analizo expresion logica");
+                        RESULT= new Sentencia(e.codigo,""); :}
+                    ;
+ExprLogica ::= Expr:exprl TipoExpr:tipo_expr 
+            {:	RESULT = new Sentencia(exprl.codigo+tipo_expr.codigo ,""); :}
+            | ABREPAR Expr:exprl TipoExpr:tipo_expr CIERRAPAR 
+;
+TipoExpr ::= EQUAL Expr:exprl1
+            {:	RESULT = new Sentencia("=="+exprl1.codigo,"");:}
+            | NOT_EQUAL Expr:exprl1
+            {:	RESULT = new Sentencia("!="+exprl1.codigo,""); :}
+            |BIGGER Expr:exprl1
+            {:	RESULT = new Sentencia(">"+exprl1.codigo,""); :} 
+            | BIGGER_EQUAL Expr:exprl1
+            {:	RESULT = new Sentencia(">="+exprl1.codigo,""); :}
+            | SMALLER Expr:exprl1
+            {:	RESULT = new Sentencia("<"+exprl1.codigo,""); :}
+            | SMALLER_EQUAL Expr:exprl1
+            {:	RESULT = new Sentencia("<="+exprl1.codigo,""); :}
+            | NOT_EQUAL Valores:v
+            {:	RESULT = new Sentencia("!="+v.resultado,""); :}
+            |EQUAL Valores:v
+            {:	RESULT = new Sentencia("=="+v.resultado,""); :}
+            ;
+            Expr ::= ArrElement | Elemento:elemto
+            {:  	RESULT = new Sentencia(elemto.resultado,"");
+            :}
+            
+;
+
+SenteicaIf ::= IF ABREPAR ListaExprLogicas:l_exp CIERRAPAR ABRELLAVE {:this.parser.analizadorLexico.getTabla().set();:} ListaSentencias:ls {:this.parser.analizadorLexico.getTabla().reset();:}CIERRALLAVE SentenciaElse:se
+            {:
+            ls.codigo = ls.codigo.replace("\n", "\n\t");
+            String codigo =  "if("+l_exp.codigo+"):\n\t"+ls.codigo+se.codigo;
+            RESULT = new Sentencia(codigo+"\n","");
+            :}
+;
+SentenciaElse::=  
+                {:	System.out.println("Entro en sentencia else");
+                    RESULT = new Sentencia("","");:}
+                 ELSE ABRELLAVE  {:this.parser.analizadorLexico.getTabla().set();:} ListaSentencias:ls CIERRALLAVE
+                {:
+                this.parser.analizadorLexico.getTabla().reset();
+                ls.codigo = ls.codigo.replace("\n", "\n\t");
+                String codigo =  "else:\n\t"+ls.codigo;
+                RESULT = new Sentencia(codigo+"\n","");
+                :}
+;
+
+
+SentenciaWhile ::= WHILE ABREPAR ListaExprLogicas:l_exp CIERRAPAR {:this.parser.analizadorLexico.getTabla().set();:} ABRELLAVE ListaSentencias:ls CIERRALLAVE
+            {:	this.parser.analizadorLexico.getTabla().reset();
+                ls.codigo = ls.codigo.replace("\n", "\n\t");
+                String codigo =  "while("+l_exp.codigo+"):\n\t"+ls.codigo;
+                RESULT = new Sentencia(codigo+"\n","");
+            :}
+;
+
+listaargumentos::=			/* Epsilon*/
+			{: RESULT = new Sentencia("", "0"); :}
+			| Tipo:t ID:id listaargumentos_p:a
+			{:
+			Simbolo sAux;
+			id.tipo = t.resultado;
+			TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+			if ((sAux=tabla.buscarGlobal(id.nombre))==null){
+				sAux=tabla.insertar(id);
+			}
+			RESULT= new Sentencia(id.nombre+a.codigo,String.valueOf(1+Integer.parseInt(a.resultado)));
+			
+			:}
+			
+;
+listaargumentos_p::=			/* Epsilon*/
+			{: 
+			RESULT = new Sentencia("", "0");
+			:}
+			
+			| COMA Tipo:t ID:id listaargumentos_p:l
+			{: 
+			Simbolo sAux;
+			id.tipo = t.resultado;
+			TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+			if ((sAux=tabla.buscarGlobal(id.nombre))==null){
+				sAux=tabla.insertar(id);
+			}
+			RESULT = new Sentencia(","+id.nombre+l.codigo, String.valueOf(1+Integer.parseInt(l.resultado)));
+			:}
+;
+
+Read ::=READ ABREPAR ID:s CIERRAPAR PTOYCOMA 
+        {:
+		Simbolo sAux;
+		TablaSimbolos tabla=this.parser.analizadorLexico.getTabla();
+		if ((sAux=tabla.buscarGlobal(s.nombre))==null){
+			report_fatal_error("Variable sin declarar",this.parser.cur_token);
+		}
+        RESULT = new Sentencia (s.nombre + "= input()","");:}
+;
