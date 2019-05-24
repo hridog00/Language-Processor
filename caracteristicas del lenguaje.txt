@@ -8,10 +8,14 @@ Caracterisitcas del lenguaje:
 -Permite llamadas a funciones.
 -Todas las expresiones deben encontrarse dentro de funciones (menos las declaraciones de variables globales).
 -Entrada: mediante read(<varaible donde asignamos el valor>) 
--Salida: print("Hola, tengo "+a+ " años")
+-Salida: print("Hola, tengo "+a+ " aÃ±os")
 -Todas las sentencias finlizadas en punto y coma.
 -Bucles: while
 -Condiciones: If/else
 -Las expresiones numericas, logicas y relacionales son igual que en c, con todas las caracterisiticas de dicho compilador. 
  (te permite almacenar en un int el resultado de una operacion de dos real, por ejemplo)
 -Permite recursividad
+-Permite la asignacion, tanto de tipos basicos como de elementos de los Arrays. Se controla que las asignaciones tengan tipos compatibles. (es decir, que a una variable char o a un elemento de un array de tipo char solo le peudas asignar un elemento char)
+Este control se realiza tambien con los retornos de las funciones. 
+Si el tipo de una funcion es tipo bool, el return de esa funcion debe ser un bool y el elemento al cual le asignamos el valor de retorno de la funcion sera un bool tambien.
+
