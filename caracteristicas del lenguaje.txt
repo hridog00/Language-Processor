@@ -1,0 +1,17 @@
+Caracterisitcas del lenguaje:
+-basado en c, con algunas diferencias.
+-Tipos basicos: int, real, bool, char
+-Arrays de dos dimensiones de tipos basicos
+-Declaracion de variables globales
+-Declaracion de funciones, devuleven tipos basicos, argumentos-> tipos basicos o elementos de una matriz. 
+ Los return estan al final.
+-Permite llamadas a funciones.
+-Todas las expresiones deben encontrarse dentro de funciones (menos las declaraciones de variables globales).
+-Entrada: mediante read(<varaible donde asignamos el valor>) 
+-Salida: print("Hola, tengo "+a+ " años")
+-Todas las sentencias finlizadas en punto y coma.
+-Bucles: while
+-Condiciones: If/else
+-Las expresiones numericas, logicas y relacionales son igual que en c, con todas las caracterisiticas de dicho compilador. 
+ (te permite almacenar en un int el resultado de una operacion de dos real, por ejemplo)
+-Permite recursividad
