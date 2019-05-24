@@ -1,0 +1,14 @@
+-permite el suo de variables locales.
+ Esto se refleja en la creacion de funciones, en las estructuras while y en los if/else. 
+ Por cada una de estas estructuras, se crea una tabla nueva, de modo que las variables que se creen dentro de ellas seran destruidas cuando termine su ejecución.
+ 
+-permite comentarios.
+ Los comentarios seran de la siguiente manera: 
+ //[todo el texto que que se quiera]
+ 
+ -permite la operacion unaria.
+  Se permiten operaciones de este tipo: int a = -b;
+  
+ -los arrays pueden ser bidimensionales y se controla que cuando accedamos a un elemento, este se encuentre dentro de las dimensiones establecido.
+ 
+ 
