@@ -479,6 +479,9 @@ Elemento ::= Numeros:num
 ;
 ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 							{: 
+                             if((e1.tipo == "char") || ("e1.tipo=='bool") || (e2.tipo == "char") || (e2.tipo=="bool")){
+                                 report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                             }
 							String temporal=nuevaTemporal();	
 							Sentencia resultSent= new Sentencia(e1.codigo+"+"+e2.codigo,temporal);
 							resultSent.tipo = "both";
@@ -487,21 +490,30 @@ ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 
 						| ExpresionNum:e1 MENOS ExpresionNum:e2
 						{: 
-							String temporal=nuevaTemporal();	
+							if((e1.tipo == "char") || ("e1.tipo=='bool") || (e2.tipo == "char") || (e2.tipo=="bool")){
+                                 report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                             }
+                            String temporal=nuevaTemporal();	
 							Sentencia resultSent= new Sentencia(e1.codigo+"-"+e2.codigo,temporal);
 							resultSent.tipo = "both";
 							RESULT= resultSent; 
 						:}
 						| ExpresionNum:e1 MULT ExpresionNum:e2 
 						{: 
-							String temporal=nuevaTemporal();	
+							if((e1.tipo == "char") || ("e1.tipo=='bool") || (e2.tipo == "char") || (e2.tipo=="bool")){
+                                 report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                             }
+                            String temporal=nuevaTemporal();	
 							Sentencia resultSent= new Sentencia(e1.codigo+"*"+e2.codigo,temporal);
 							resultSent.tipo = "both";
 							RESULT= resultSent; 
 						:}
 						| ExpresionNum:e1 DIV ExpresionNum:e2
 						{: 
-							String temporal=nuevaTemporal();	
+							if((e1.tipo == "char") || ("e1.tipo=='bool") || (e2.tipo == "char") || (e2.tipo=="bool")){
+                                 report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                             }
+                            String temporal=nuevaTemporal();	
 							Sentencia resultSent= new Sentencia(e1.codigo+"/"+e2.codigo,temporal);
 
 							resultSent.tipo = "both";
@@ -525,18 +537,24 @@ ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 
 						| MENOS ExpresionNum:e 
 						{: 
-							String temporal=nuevaTemporal();	
+							if((e.tipo == "char") || ("e.tipo=='bool")){
+                                 report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                             }
+                            String temporal=nuevaTemporal();	
 							Sentencia resultSent= new Sentencia("-"+e.codigo,temporal);
-								resultSent.tipo = "both";
+							resultSent.tipo = "both";
 							
 							RESULT= resultSent; 
 						:}
 
 						| ABREPAR ExpresionNum:e CIERRAPAR 
 						{:
-							String temporal=nuevaTemporal();	
+							if((e.tipo == "char") || ("e.tipo=='bool")){
+                                 report_fatal_error("Operacion no soportada:un elemento de la expresion no es de tipo numerico",this.parser.cur_token);
+                             }
+                            String temporal=nuevaTemporal();	
 							Sentencia resultSent= new Sentencia("("+e.codigo+")",temporal);
-								resultSent.tipo = "both";
+							resultSent.tipo = "both";
 							
 							RESULT= resultSent; 
 						:}
