@@ -4,10 +4,11 @@ public class Simbolo {
 	String tipo;
 	int tam;
     int tam2;
-    //List<String> param = new ArrayList<>();
+    List<String> param;
 	public Simbolo(String nombre, String valor){
 		this.nombre = nombre;
 		this.valor = valor;
+         this.param = new ArrayList<>()
 
 		
 	 }
