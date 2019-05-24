@@ -223,7 +223,9 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 									}
 									this.parser.analizadorLexico.getTabla().set(); :}  
 									ABREPAR listaargumentos:la  
-									{:	s.tam = Integer.parseInt(la.resultado);:} 
+									{:	s.tam = Integer.parseInt(la.resultado);
+                                        s.param = la.tiposArgumentos;
+                                    :} 
 									CIERRAPAR ABRELLAVE ListaSentencias:ls ReturnSentencia:rs CIERRALLAVE 
 									{: 
 									this.parser.analizadorLexico.getTabla().reset();
@@ -574,6 +576,12 @@ LlamadaFunc ::= ID:s ABREPAR ListaParam:l CIERRAPAR
 							if(sAux.tam != Integer.parseInt(l.resultado)){
 								report_fatal_error("Numero de parametros incorrecto",this.parser.cur_token);
 							}
+                            for(int i=0;i<sAux.param.size();i++){
+                                System.out.println(sAux.param.get(i),l.tiposArgumentos.get(i) );
+                              /*  if(sAux.param.get(i)!= l.tiposArgumentos.get(i)){
+                                    report_fatal_error("Parametros erroneos",this.parser.cur_token);
+                                }*/
+                            }
 							Sentencia resultSent= new Sentencia(s.nombre+"("+l.codigo+")\n", l.resultado);
 							resultSent.tipo = sAux.tipo;
 							RESULT= resultSent; 
@@ -582,8 +590,14 @@ LlamadaFunc ::= ID:s ABREPAR ListaParam:l CIERRAPAR
 ListaParam ::=  Elemento:elem  ListaParam_p:lp
 					{:
 						Sentencia resultSent= new Sentencia(elem.resultado+lp.codigo,String.valueOf(1+Integer.parseInt(lp.resultado)));
+                        resultSent.tiposArgumentos.add(elem.tipo);
 						RESULT= resultSent; 
 					:}
+                    |Valores:v ListaParam_p:lp
+					{:	resultSent = new Sentencia(v.resultado+lp.codigo,String.valueOf(1+Integer.parseInt(lp.resultado)));
+                        resultSent.tiposArgumentos.add(v.codigo);
+						RESULT= resultSent; 
+                    :}
 
 					| {:
 						RESULT = new Sentencia("","0");
@@ -595,10 +609,15 @@ ListaParam_p ::=
 					:}
 					| COMA Elemento:elem ListaParam_p:lp1 
 					{:
-						RESULT = new Sentencia(","+elem.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));
+						Sentencia resultSent = new Sentencia(","+elem.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));
+                        resultSent.tiposArgumentos.add(elem.tipo);
+						RESULT= resultSent; 
 					:}
 					| COMA Valores:v ListaParam_p:lp1
-					{:	RESULT = new Sentencia(","+v.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));:}
+					{:	resultSent = new Sentencia(","+v.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));
+                        resultSent.tiposArgumentos.add(v.codigo);
+						RESULT= resultSent; 
+                    :}
 ;
 
 ListaExprLogicas ::= ExprLogica:ex_logica1 AND ListaExprLogicas:l_exp
@@ -676,7 +695,9 @@ listaargumentos::=			/* Epsilon*/
 								{
 									sAux=tabla.insertar(id);
 								}
-			 					RESULT= new Sentencia(id.nombre+a.codigo,String.valueOf(1+Integer.parseInt(a.resultado)));
+			 					Sentencia sent= new Sentencia(id.nombre+a.codigo,String.valueOf(1+Integer.parseInt(a.resultado)));
+                                 sent.tiposArgumentos.add(id.tipo);
+                                RESULT = sent;
 								:}
 			
 ;
@@ -694,7 +715,9 @@ listaargumentos_p::=			/* Epsilon*/
 											{
 												sAux=tabla.insertar(id);
 											}
-									RESULT = new Sentencia(","+id.nombre+l.codigo, String.valueOf(1+Integer.parseInt(l.resultado)));
+									Sentencia sent = new Sentencia(","+id.nombre+l.codigo, String.valueOf(1+Integer.parseInt(l.resultado)));
+                                    sent.tiposArgumentos.add(id.tipo);
+                                    RESULT = sent;
 									/* Se busca en tabla de simbolos y se inserta o devuelve error*/
 									:}
 ;
