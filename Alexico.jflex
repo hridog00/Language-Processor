@@ -58,7 +58,6 @@ import java.io.*;
 "=" {return new Symbol(sym.ASIG); }
 "[" { return new Symbol(sym.ABRECOR); }
 "]" { return new Symbol(sym.CIERRACOR); }
-":" { return new Symbol(sym.DOSPUNTOS); }
 "," { return new Symbol(sym.COMA); }
 "read" { return new Symbol(sym.READ); }
 "print" { return new Symbol(sym.PRINT); }
@@ -71,5 +70,5 @@ import java.io.*;
 		return new Symbol(sym.ID,s);
 	}
 [ \t\r\n]+ {;}
-. { System.out.println("Error en léxico."+yytext()+"-"); }
+. { System.out.println("Error en léxico."+yytext()+"-"+"yyline()"); }
 

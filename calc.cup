@@ -66,28 +66,27 @@ action code {:
 /*Terminales tokens que puede devolver el lexico*/
 terminal INTEGER,REAL,CHAR,BOOLEAN, READ, PRINT;
 terminal  AND, OR, IF, ELSE, EQUAL, NOT_EQUAL, WHILE;
-terminal MAS, MENOS, MULT, DIV, MOD, UMENOS;
+terminal MAS, MENOS, MULT, DIV, MOD;
 terminal BIGGER, BIGGER_EQUAL, SMALLER, SMALLER_EQUAL;
-terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,DOSPUNTOS,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
+terminal ABREPAR,CIERRAPAR,ABRECOR,CIERRACOR,COMA,PTOYCOMA, ASIG , CIERRALLAVE, ABRELLAVE, VOID, RETURN;
 terminal String COMENTARIO, TEXTO;
 terminal String CARACTER;
 terminal Simbolo ID;
-terminal Integer NUM,DIM;
+terminal Integer NUM;
 terminal Float NUMREAL;
 terminal boolean TRUE, FALSE;
 
-non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, ListaValores, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
+non terminal Sentencia Asignacion, AsigTipo, listaDeclaraciones, DeclaracionVar , DeclaracionTipoBasico, AsignacionDecl, DeclaracionFuncion,ListaSentencias, Sentence ;
 non terminal programa;
-non terminal Sentencia SenteicaIf, SentenciaElse, SentenciaWhile, Comentario, Imprimir, expPrint, expPrint_P;
+non terminal Sentencia SenteicaIf, SentenciaElse, SentenciaWhile, Imprimir, expPrint, expPrint_P;
 non terminal Sentencia ListaExprLogicas, ExprLogica, TipoExpr, Expr;
-non terminal Sentencia ExpresionNum, ExpresionNumP,Termino,TerminoP,Elemento, Factor, LlamadaFunc,ListaParam , Elem  , ListaParam_p, Bool_value,  ReturnSentencia;
-non terminal  Sentencia listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,DOSdimAsig  , FuncionTipo, ReturnTipo, ArrElement;
+non terminal Sentencia ExpresionNum,Elemento, LlamadaFunc,ListaParam ,  ListaParam_p, Bool_value,  ReturnSentencia;
+non terminal  Sentencia listaargumentos, listaargumentos_p , DeclaracionArr, DOSdim,DOSdimAsig , ArrElement;
 non terminal Sentencia Valores, Numeros, Tipo, Read;
 
 
 precedence left MAS, MENOS;
 precedence left MULT,DIV,MOD;
-precedence left UMENOS;
 /*Gramatica*/
 
 programa ::= listaDeclaraciones:l
@@ -128,8 +127,9 @@ DeclaracionTipoBasico ::= Tipo:t ID:s AsignacionDecl:a PTOYCOMA
 									{: Sentencia resultSent=new Sentencia(s.nombre+"="+a.resultado+"\n",s.nombre);
 									RESULT=resultSent;
 									s.valor=a.resultado;
+									s.tipo = t.resultado;							
+									
 									if(a.codigo != "None"){
-										s.tipo = t.resultado;							
 										if(a.codigo == s.tipo){
 											System.out.println("Va bien");
 										}else{
@@ -532,6 +532,7 @@ ExpresionNum ::=  ExpresionNum:e1 MAS ExpresionNum:e2
 							if(e1.tipo != "int" || e2.tipo != "int"){
 								report_fatal_error("Operacion no soportada",this.parser.cur_token);
 							}
+							resultSent.tipo = "int";
 							RESULT= resultSent; 
 						:}
 						| Elemento:el
@@ -753,6 +754,7 @@ Read ::=READ ABREPAR ID:s CIERRAPAR PTOYCOMA {:
 									{
 									report_fatal_error("Variable sin declarar",this.parser.cur_token);
 									}
+									
 									RESULT = new Sentencia (s.nombre + "= input()","");:}
 ;
 Imprimir::= PRINT ABREPAR expPrint:expr CIERRAPAR PTOYCOMA
