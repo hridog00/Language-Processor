@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Simbolo {
 	String nombre;
 	String valor;
@@ -8,7 +11,7 @@ public class Simbolo {
 	public Simbolo(String nombre, String valor){
 		this.nombre = nombre;
 		this.valor = valor;
-         this.param = new ArrayList<>()
+        this.param = new ArrayList<>();
 
 		
 	 }

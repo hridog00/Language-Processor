@@ -1,4 +1,4 @@
-int suma(int a, int b){
+int suma(int a, int b, char ca){
 	int c = a+b;
 	return c;
 }
@@ -8,7 +8,11 @@ int matrix[2][2];
 int a= 3;
 print("hola"+a);
 matrix[0][0] = 0;
-matrix[0][1] = suma(1,matrix[0][0]);
+matrix[0][1] = suma(matrix[0][0],0, 0);
 print("reusltado:"+matrix[0][1]);
+if (a== 2){
+int b;
+read(b);
+}
 return 0;
 }
