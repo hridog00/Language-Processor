@@ -1,11 +1,16 @@
+char array[2][2];
 
-int funcion(int a){
-	if (a< 3){
-		a = funcion(a);
-	}
-	return a+1;
+real valor(int num){
+	real c = num + 0.5;
+	
+	return c;
 }
 int main(){
-	int resultado = funcion(0);
+	array[3][0] = 'c';
+	real resultado =  valor(0);
+	if (resultado > 0.5){
+		bool c = true;
+	}
+	print(c);
 	return 0;
 }

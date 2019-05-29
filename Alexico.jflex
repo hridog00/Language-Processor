@@ -70,5 +70,5 @@ import java.io.*;
 		return new Symbol(sym.ID,s);
 	}
 [ \t\r\n]+ {;}
-. { System.out.println("Error en léxico."+yytext()+"-"+"yyline()"); }
+. { System.out.println("Error en léxico ["+yytext()+"] en linea "+yyline+"\n"); }
 

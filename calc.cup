@@ -4,7 +4,7 @@ import java.util.*;
 
 parser code {:
 
-Yylex analizadorLexico;
+static Yylex analizadorLexico;
 
 public static void main(String[] argv){
 	if (argv.length == 0) {
@@ -22,7 +22,7 @@ public static void main(String[] argv){
 		parserObj.parse();
 		}
 		catch(Exception x) {
-		System.out.println("Error fatal."+x.toString());
+		System.out.println("Error: linea "+analizadorLexico.linea()+" columna "+analizadorLexico.columna());
 		}
 	}
 }
@@ -90,7 +90,7 @@ precedence left MULT,DIV,MOD;
 /*Gramatica*/
 
 programa ::= listaDeclaraciones:l
-				 {: System.out.println("C�digo generado:\n\nimport numpy as np\n" + l.codigo+"main()"); :}
+				 {: System.out.println("Codigo generado:\n\nimport numpy as np\n" + l.codigo+"main()"); :}
 	
 				| programa error PTOYCOMA
 				{: this.parser.error_sintactico(this.parser.cur_token);:}
@@ -103,7 +103,6 @@ listaDeclaraciones ::=  listaDeclaraciones:l DeclaracionVar:d
 					 :}  
 					|  listaDeclaraciones:l DeclaracionFuncion:df
 					{: 
-					System.out.println("DECLARACION FUNCION:"+df.codigo);
 					RESULT=new Sentencia(l.codigo+""+df.codigo,"");
 					 :} 
 					
@@ -131,7 +130,6 @@ DeclaracionTipoBasico ::= Tipo:t ID:s AsignacionDecl:a PTOYCOMA
 									
 									if(a.codigo != "None"){
 										if(a.codigo == s.tipo){
-											System.out.println("Va bien");
 										}else{
 											report_fatal_error("ERROR:la asignacion no se corresponde al tipo declarado",this.parser.cur_token);	
 										}
@@ -181,9 +179,7 @@ AsignacionDecl ::= ASIG Valores:v
 
 Valores ::= CARACTER:c 
 					{: 
-					System.out.println("Entro en caracter");
 					RESULT=new Sentencia("char",c); 
-					System.out.println("Salgo en caracter");
 					:} 
 					|Bool_value:b 
 					{: RESULT=new Sentencia("bool",b.resultado); :} 
@@ -219,7 +215,6 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 									{
 									sAux=tabla.insertar(s);
-									System.out.println("Insertando "+sAux.nombre);
 									}
 									this.parser.analizadorLexico.getTabla().set(); :}  
 									ABREPAR listaargumentos:la  
@@ -230,18 +225,13 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 									{: 
 									this.parser.analizadorLexico.getTabla().reset();
 									Sentencia resultSent=new Sentencia("def "+s.nombre+"("+la.codigo+"):\n"+ls.codigo+rs.codigo,s.nombre);
-									System.out.println(rs.tipo +s.tipo);
 									s.tam = Integer.parseInt(la.resultado);
-									System.out.println("TAMAÑO FUNCION:"+la.resultado);
 									
 									if (rs.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-										System.out.println("Va bien");
 
 										}else if(rs.tipo == "int" && s.tipo == "real"){
-											System.out.println("Todo ok");
 										}else{
 											if(rs.tipo == s.tipo){
-												System.out.println("Va bien");
 											}else{
 												report_fatal_error("EL return no cuadra",this.parser.cur_token);
 											}
@@ -256,7 +246,6 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 									if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 									{
 									sAux=tabla.insertar(s);
-									System.out.println("Insertando "+sAux.nombre);
 									}
 									this.parser.analizadorLexico.getTabla().set(); :}   ABREPAR listaargumentos:la  
 									{:	s.tam = Integer.parseInt(la.resultado);:} 
@@ -267,7 +256,6 @@ DeclaracionFuncion ::= Tipo:t ID:s {:
 									if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 										{
 										sAux=tabla.insertar(s);
-										System.out.println("Insertando "+sAux.nombre);
 										}
 									this.parser.analizadorLexico.getTabla().set(); :}  
 									ListaSentencias:ls CIERRALLAVE 
@@ -294,13 +282,12 @@ ReturnSentencia ::= RETURN ExpresionNum:exprnum PTOYCOMA
 ;
 
 ListaSentencias ::= ListaSentencias:ls1 Sentence:s 
-									{:System.out.println("Entro aqui: sentencia NO vacia:");
+									{:
 									RESULT=new Sentencia(ls1.codigo+"\t"+s.codigo,""); 
 									:}
 									|
 									{:
 									RESULT=new Sentencia("",""); 
-									System.out.println("Entro aqui: sentencia vacia");
 									:}
 
 ;
@@ -316,7 +303,6 @@ Sentence ::= DeclaracionArr:darr
   					 {:RESULT=new Sentencia(sw.codigo,"");  :}
 						|Tipo:t ID:s PTOYCOMA
 						{:
-								System.out.println("entro en asignacion");
 								Sentencia resultSent=new Sentencia(s.nombre+"=None\n",s.nombre);
 								RESULT=resultSent;
 								s.valor="None";
@@ -339,20 +325,15 @@ Sentence ::= DeclaracionArr:darr
 ;
 Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as  
 								{: 
-								System.out.println("entro en asignacion");
 								Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
 								RESULT=resultSent;
 								s.valor=as.resultado;
 								s.tipo = t.resultado;
-								System.out.println(as.tipo+ s.tipo);
 									if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-											System.out.println("Va bien");
 
 									}else if(as.tipo == "int" && s.tipo == "real"){
-										System.out.println("Todo ok");
 									}else{
 										if(as.tipo == s.tipo){
-											System.out.println("Va bien");
 										}else{
 											report_fatal_error("ERROR en asignacion",this.parser.cur_token);
 										}
@@ -376,15 +357,11 @@ Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as
 									report_fatal_error("Variable no inicializada",this.parser.cur_token);	
 								}else{
 									s.tipo = sAux.tipo;
-									System.out.println(as.tipo+ s.tipo);
 									if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-											System.out.println("Va bien");
 
 									}else if(as.tipo == "int" && s.tipo == "real"){
-										System.out.println("Todo ok");
 									}else{
 										if(as.tipo == s.tipo){
-											System.out.println("Va bien");
 										}else{
 											report_fatal_error("ERROR en asignacion",this.parser.cur_token);
 										}
@@ -399,12 +376,9 @@ Asignacion ::= Tipo:t ID:s ASIG AsigTipo:as
 							|ArrElement:s ASIG AsigTipo:as
 							{:
 								if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-									System.out.println("Va bien");
 								}else if(as.tipo == "int" && s.tipo == "real"){
-									System.out.println("Todo ok");
 								}else{
 									if(as.tipo == s.tipo){
-										System.out.println("Va bien");
 									}else{
 										report_fatal_error("ERROR en asignacion",this.parser.cur_token);
 									}
@@ -453,7 +427,6 @@ AsigTipo ::= ExpresionNum:exprn
 				:}
 				|  Valores: v
 				{:
-				System.out.println("Entro en asig tipo valores");
 				Sentencia s = new Sentencia(v.resultado,v.resultado);
 				s.tipo = v.codigo;
 				RESULT = s;
@@ -576,16 +549,12 @@ LlamadaFunc ::= ID:s ABREPAR ListaParam:l CIERRAPAR
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null){
 								report_fatal_error("Variable no inicializada",this.parser.cur_token);
 							}
-							System.out.println("PARAMETROS"+Integer.parseInt(l.resultado));
 							if(sAux.tam != Integer.parseInt(l.resultado)){
 								report_fatal_error("Numero de parametros incorrecto",this.parser.cur_token);
 							}
-							System.out.println(sAux.param);
-							System.out.println(l.tiposArgumentos);
 							
-							System.out.println("Analizo la llamada a la funcion");
+							
                             for(int i=0;i<sAux.param.size();i++){
-                                System.out.println("Funcion "+sAux.param.get(i)+" llamada "+l.tiposArgumentos.get(i) );
                                 if(sAux.param.get(i)!= l.tiposArgumentos.get(i)){
                                     report_fatal_error("Parametros erroneos",this.parser.cur_token);
                                 }
@@ -607,7 +576,6 @@ ListaParam ::=  Elemento:elem  ListaParam_p:lp
 					{:	Sentencia resultSent = new Sentencia(v.resultado+lp.codigo,String.valueOf(1+Integer.parseInt(lp.resultado)));
 						resultSent.tiposArgumentos.addAll(lp.tiposArgumentos);
 						
-						System.out.println("Valores en algumento"+v.codigo);
                         resultSent.tiposArgumentos.add(v.codigo);
 						RESULT= resultSent; 
                     :}
@@ -630,7 +598,6 @@ ListaParam_p ::=
 					:}
 					| COMA Valores:v ListaParam_p:lp1
 					{:	Sentencia resultSent = new Sentencia(","+v.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));
-						System.out.println("Add tipo valor"+v.codigo);
                         resultSent.tiposArgumentos.addAll(lp1.tiposArgumentos);
                         
                         resultSent.tiposArgumentos.add(v.codigo);
@@ -644,7 +611,6 @@ ListaExprLogicas ::= ExprLogica:ex_logica1 AND ListaExprLogicas:l_exp
 									{: RESULT= new Sentencia(ex_logica1.codigo +" or "+l_exp.codigo,""); :}
 								| ExprLogica:e
 								{: 
-									System.out.println("Analizo expresion logica");
 									RESULT= new Sentencia(e.codigo,""); :}
 ;
 ExprLogica ::= Expr:exprl TipoExpr:tipo_expr 
@@ -681,8 +647,7 @@ SenteicaIf ::= IF ABREPAR ListaExprLogicas:l_exp CIERRAPAR ABRELLAVE {:this.pars
 						:}
 ;
 SentenciaElse::=  
-						{:	System.out.println("Entro en sentencia else");
-							RESULT = new Sentencia("","");:}
+						{:								RESULT = new Sentencia("","");:}
 						| ELSE ABRELLAVE  {:this.parser.analizadorLexico.getTabla().set();:} ListaSentencias:ls CIERRALLAVE
 						{:
 							this.parser.analizadorLexico.getTabla().reset();
@@ -714,7 +679,6 @@ listaargumentos::=			/* Epsilon*/
 									sAux=tabla.insertar(id);
 								}
 			 					Sentencia sent= new Sentencia(id.nombre+a.codigo,String.valueOf(1+Integer.parseInt(a.resultado)));
-			 					 System.out.println("inserto "+id.tipo);
 			 					
                                  sent.tiposArgumentos.addAll(a.tiposArgumentos);
                                  sent.tiposArgumentos.add(id.tipo);
@@ -741,7 +705,6 @@ listaargumentos_p::=			/* Epsilon*/
                                     sent.tiposArgumentos.addAll(l.tiposArgumentos);
                                     
                                     sent.tiposArgumentos.add(id.tipo);
-                                    System.out.println("inserto "+id.tipo);
                                     RESULT = sent;
 									/* Se busca en tabla de simbolos y se inserta o devuelve error*/
 									:}

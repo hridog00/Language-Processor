@@ -443,7 +443,7 @@ public class Parser extends java_cup.runtime.lr_parser {
 
 
 
-Yylex analizadorLexico;
+static Yylex analizadorLexico;
 
 public static void main(String[] argv){
 	if (argv.length == 0) {
@@ -461,7 +461,7 @@ public static void main(String[] argv){
 		parserObj.parse();
 		}
 		catch(Exception x) {
-		System.out.println("Error fatal."+x.toString());
+		System.out.println("Error: linea "+analizadorLexico.linea()+" columna "+analizadorLexico.columna());
 		}
 	}
 }
@@ -529,7 +529,7 @@ class CUP$Parser$actions {
 		int lleft = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).left;
 		int lright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia l = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		 System.out.println("C�digo generado:\n\nimport numpy as np\n" + l.codigo+"main()"); 
+		 System.out.println("Codigo generado:\n\nimport numpy as np\n" + l.codigo+"main()"); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("programa",9, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -586,7 +586,6 @@ class CUP$Parser$actions {
 		int dfright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia df = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		 
-					System.out.println("DECLARACION FUNCION:"+df.codigo);
 					RESULT=new Sentencia(l.codigo+""+df.codigo,"");
 					 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("listaDeclaraciones",2, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -663,7 +662,6 @@ class CUP$Parser$actions {
 									
 									if(a.codigo != "None"){
 										if(a.codigo == s.tipo){
-											System.out.println("Va bien");
 										}else{
 											report_fatal_error("ERROR:la asignacion no se corresponde al tipo declarado",this.parser.cur_token);	
 										}
@@ -770,9 +768,7 @@ class CUP$Parser$actions {
 		int cright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		String c = (String)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		 
-					System.out.println("Entro en caracter");
 					RESULT=new Sentencia("char",c); 
-					System.out.println("Salgo en caracter");
 					
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Valores",33, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -889,7 +885,6 @@ class CUP$Parser$actions {
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 									{
 									sAux=tabla.insertar(s);
-									System.out.println("Insertando "+sAux.nombre);
 									}
 									this.parser.analizadorLexico.getTabla().set(); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("NT$0",37, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -940,18 +935,13 @@ class CUP$Parser$actions {
 		 
 									this.parser.analizadorLexico.getTabla().reset();
 									Sentencia resultSent=new Sentencia("def "+s.nombre+"("+la.codigo+"):\n"+ls.codigo+rs.codigo,s.nombre);
-									System.out.println(rs.tipo +s.tipo);
 									s.tam = Integer.parseInt(la.resultado);
-									System.out.println("TAMAÑO FUNCION:"+la.resultado);
 									
 									if (rs.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-										System.out.println("Va bien");
 
 										}else if(rs.tipo == "int" && s.tipo == "real"){
-											System.out.println("Todo ok");
 										}else{
 											if(rs.tipo == s.tipo){
-												System.out.println("Va bien");
 											}else{
 												report_fatal_error("EL return no cuadra",this.parser.cur_token);
 											}
@@ -976,7 +966,6 @@ class CUP$Parser$actions {
 									if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 									{
 									sAux=tabla.insertar(s);
-									System.out.println("Insertando "+sAux.nombre);
 									}
 									this.parser.analizadorLexico.getTabla().set(); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("NT$2",39, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1015,7 +1004,6 @@ class CUP$Parser$actions {
 									if ((sAux=tabla.buscarGlobal(s.nombre))==null)
 										{
 										sAux=tabla.insertar(s);
-										System.out.println("Insertando "+sAux.nombre);
 										}
 									this.parser.analizadorLexico.getTabla().set(); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("NT$4",41, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1087,7 +1075,7 @@ class CUP$Parser$actions {
 		int sleft = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).left;
 		int sright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia s = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		System.out.println("Entro aqui: sentencia NO vacia:");
+		
 									RESULT=new Sentencia(ls1.codigo+"\t"+s.codigo,""); 
 									
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("ListaSentencias",7, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
@@ -1100,7 +1088,6 @@ class CUP$Parser$actions {
               Sentencia RESULT =null;
 		
 									RESULT=new Sentencia("",""); 
-									System.out.println("Entro aqui: sentencia vacia");
 									
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("ListaSentencias",7, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1177,7 +1164,6 @@ class CUP$Parser$actions {
 		int sright = ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).right;
 		Simbolo s = (Simbolo)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
 		
-								System.out.println("entro en asignacion");
 								Sentencia resultSent=new Sentencia(s.nombre+"=None\n",s.nombre);
 								RESULT=resultSent;
 								s.valor="None";
@@ -1246,20 +1232,15 @@ class CUP$Parser$actions {
 		int asright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia as = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		 
-								System.out.println("entro en asignacion");
 								Sentencia resultSent=new Sentencia(s.nombre+"="+as.resultado+"\n",s.nombre);
 								RESULT=resultSent;
 								s.valor=as.resultado;
 								s.tipo = t.resultado;
-								System.out.println(as.tipo+ s.tipo);
 									if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-											System.out.println("Va bien");
 
 									}else if(as.tipo == "int" && s.tipo == "real"){
-										System.out.println("Todo ok");
 									}else{
 										if(as.tipo == s.tipo){
-											System.out.println("Va bien");
 										}else{
 											report_fatal_error("ERROR en asignacion",this.parser.cur_token);
 										}
@@ -1295,15 +1276,11 @@ class CUP$Parser$actions {
 									report_fatal_error("Variable no inicializada",this.parser.cur_token);	
 								}else{
 									s.tipo = sAux.tipo;
-									System.out.println(as.tipo+ s.tipo);
 									if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-											System.out.println("Va bien");
 
 									}else if(as.tipo == "int" && s.tipo == "real"){
-										System.out.println("Todo ok");
 									}else{
 										if(as.tipo == s.tipo){
-											System.out.println("Va bien");
 										}else{
 											report_fatal_error("ERROR en asignacion",this.parser.cur_token);
 										}
@@ -1330,12 +1307,9 @@ class CUP$Parser$actions {
 		Sentencia as = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
 								if (as.tipo == "both" && (s.tipo == "int" || s.tipo == "real")){
-									System.out.println("Va bien");
 								}else if(as.tipo == "int" && s.tipo == "real"){
-									System.out.println("Todo ok");
 								}else{
 									if(as.tipo == s.tipo){
-										System.out.println("Va bien");
 									}else{
 										report_fatal_error("ERROR en asignacion",this.parser.cur_token);
 									}
@@ -1443,7 +1417,6 @@ class CUP$Parser$actions {
 		int vright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia v = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		
-				System.out.println("Entro en asig tipo valores");
 				Sentencia s = new Sentencia(v.resultado,v.resultado);
 				s.tipo = v.codigo;
 				RESULT = s;
@@ -1693,16 +1666,12 @@ class CUP$Parser$actions {
 								if ((sAux=tabla.buscarGlobal(s.nombre))==null){
 								report_fatal_error("Variable no inicializada",this.parser.cur_token);
 							}
-							System.out.println("PARAMETROS"+Integer.parseInt(l.resultado));
 							if(sAux.tam != Integer.parseInt(l.resultado)){
 								report_fatal_error("Numero de parametros incorrecto",this.parser.cur_token);
 							}
-							System.out.println(sAux.param);
-							System.out.println(l.tiposArgumentos);
 							
-							System.out.println("Analizo la llamada a la funcion");
+							
                             for(int i=0;i<sAux.param.size();i++){
-                                System.out.println("Funcion "+sAux.param.get(i)+" llamada "+l.tiposArgumentos.get(i) );
                                 if(sAux.param.get(i)!= l.tiposArgumentos.get(i)){
                                     report_fatal_error("Parametros erroneos",this.parser.cur_token);
                                 }
@@ -1749,7 +1718,6 @@ class CUP$Parser$actions {
 			Sentencia resultSent = new Sentencia(v.resultado+lp.codigo,String.valueOf(1+Integer.parseInt(lp.resultado)));
 						resultSent.tiposArgumentos.addAll(lp.tiposArgumentos);
 						
-						System.out.println("Valores en algumento"+v.codigo);
                         resultSent.tiposArgumentos.add(v.codigo);
 						RESULT= resultSent; 
                     
@@ -1811,7 +1779,6 @@ class CUP$Parser$actions {
 		int lp1right = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia lp1 = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 			Sentencia resultSent = new Sentencia(","+v.resultado+lp1.codigo,String.valueOf(1+Integer.parseInt(lp1.resultado)));
-						System.out.println("Add tipo valor"+v.codigo);
                         resultSent.tiposArgumentos.addAll(lp1.tiposArgumentos);
                         
                         resultSent.tiposArgumentos.add(v.codigo);
@@ -1859,7 +1826,6 @@ class CUP$Parser$actions {
 		int eright = ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()).right;
 		Sentencia e = (Sentencia)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		 
-									System.out.println("Analizo expresion logica");
 									RESULT= new Sentencia(e.codigo,""); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("ListaExprLogicas",16, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -2059,8 +2025,7 @@ this.parser.analizadorLexico.getTabla().reset();
           case 89: // SentenciaElse ::= 
             {
               Sentencia RESULT =null;
-			System.out.println("Entro en sentencia else");
-							RESULT = new Sentencia("","");
+										RESULT = new Sentencia("","");
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("SentenciaElse",11, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -2157,7 +2122,6 @@ this.parser.analizadorLexico.getTabla().set();
 									sAux=tabla.insertar(id);
 								}
 			 					Sentencia sent= new Sentencia(id.nombre+a.codigo,String.valueOf(1+Integer.parseInt(a.resultado)));
-			 					 System.out.println("inserto "+id.tipo);
 			 					
                                  sent.tiposArgumentos.addAll(a.tiposArgumentos);
                                  sent.tiposArgumentos.add(id.tipo);
@@ -2204,7 +2168,6 @@ this.parser.analizadorLexico.getTabla().set();
                                     sent.tiposArgumentos.addAll(l.tiposArgumentos);
                                     
                                     sent.tiposArgumentos.add(id.tipo);
-                                    System.out.println("inserto "+id.tipo);
                                     RESULT = sent;
 									/* Se busca en tabla de simbolos y se inserta o devuelve error*/
 									

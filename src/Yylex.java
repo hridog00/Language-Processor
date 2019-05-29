@@ -868,7 +868,7 @@ class Yylex implements java_cup.runtime.Scanner {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1: 
-            { System.out.println("Error en léxico."+yytext()+"-"+"yyline()");
+            { System.out.println("Error en léxico ["+yytext()+"] en linea"+yyline+"\n");
             } 
             // fall through
           case 44: break;
